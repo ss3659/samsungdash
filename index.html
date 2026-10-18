@@ -1,0 +1,1447 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>정형외과 경영 대시보드</title>
+<style>
+:root{
+  color-scheme: light;
+  --page:#f3f6fa; --surface:#ffffff; --surface-2:#f6f8fb; --border:#e2e8f0; --border-strong:#cbd5e1;
+  --text:#0f1b2d; --text-2:#475569; --muted:#7b8798;
+  --grid:#e8edf3; --axis:#c3cbd6;
+  --navy:#0f2a4a; --navy-2:#1a3d68; --navy-text:#c4d2e6;
+  --brand:#1f5fbf; --brand-soft:#e8f0fb;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#6250d6; --s8:#e34948;
+  --good:#0ca30c; --good-text:#006300; --warn:#fab219; --warn-text:#8a5a00; --serious:#ec835a; --serious-text:#a1441c; --crit:#d03b3b; --crit-text:#b42323;
+  --info:#5b7fb8; --mute:#a3adbb;
+  --good-bg:#e8f5e8; --warn-bg:#fff6df; --serious-bg:#fdeee7; --crit-bg:#fcebeb; --info-bg:#ebf1fa; --mute-bg:#eef1f5;
+  --shadow:0 1px 2px rgba(15,27,45,.05),0 1px 3px rgba(15,27,45,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --page:#0a121d; --surface:#111c2b; --surface-2:#16233a; --border:#22324a; --border-strong:#304463;
+    --text:#e8eef7; --text-2:#b4c0d3; --muted:#8492a8; --grid:#1d2b40; --axis:#33465f;
+    --navy:#08172a; --navy-2:#173459; --navy-text:#b9c8de;
+    --brand:#3987e5; --brand-soft:#15294a;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+    --good-text:#3fc23f; --warn-text:#fab219; --serious-text:#ec835a; --crit-text:#ee7a7a;
+    --info:#7c9cd0; --mute:#5c6a80;
+    --good-bg:#10291a; --warn-bg:#2d2410; --serious-bg:#2f1b12; --crit-bg:#331616; --info-bg:#132640; --mute-bg:#1a2638;
+    --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --page:#0a121d; --surface:#111c2b; --surface-2:#16233a; --border:#22324a; --border-strong:#304463;
+  --text:#e8eef7; --text-2:#b4c0d3; --muted:#8492a8; --grid:#1d2b40; --axis:#33465f;
+  --navy:#08172a; --navy-2:#173459; --navy-text:#b9c8de;
+  --brand:#3987e5; --brand-soft:#15294a;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --good-text:#3fc23f; --warn-text:#fab219; --serious-text:#ec835a; --crit-text:#ee7a7a;
+  --info:#7c9cd0; --mute:#5c6a80;
+  --good-bg:#10291a; --warn-bg:#2d2410; --serious-bg:#2f1b12; --crit-bg:#331616; --info-bg:#132640; --mute-bg:#1a2638;
+  --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--page);color:var(--text);font:14px/1.5 system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit}
+/* sidebar */
+.side{position:fixed;inset:0 auto 0 0;width:236px;background:var(--navy);color:var(--navy-text);display:flex;flex-direction:column;z-index:40;transition:transform .2s ease}
+.brand{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+.brand b{display:block;color:#fff;font-size:16px;letter-spacing:-.01em}
+.brand span{font-size:12px;opacity:.75}
+.nav{padding:12px 10px;display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--navy-text);text-decoration:none;font-weight:500}
+.nav a svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.nav a:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav a.on{background:var(--navy-2);color:#fff;box-shadow:inset 3px 0 0 #5aa2ff}
+.side-foot{margin-top:auto;padding:16px 20px;font-size:11.5px;opacity:.7;line-height:1.55}
+.scrim{display:none}
+/* main */
+.main{margin-left:236px;min-width:0}
+.top{position:sticky;top:0;z-index:30;background:var(--page);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:12px 28px}
+.top h1{font-size:18px;margin:0;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .sp{flex:1}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--good)}
+.chip.bad .dot{background:var(--crit)}
+.menu-btn{display:none;background:var(--surface);border:1px solid var(--border-strong);border-radius:8px;width:36px;height:36px;align-items:center;justify-content:center;cursor:pointer;color:var(--text)}
+.content{padding:22px 28px 48px;max-width:1480px}
+.page-desc{margin:0 0 16px;color:var(--text-2);font-size:13px}
+.foot-note{margin-top:24px;font-size:12px;color:var(--muted)}
+/* kpi */
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px 18px;box-shadow:var(--shadow);min-width:0}
+.kpi .l{font-size:12.5px;color:var(--text-2);font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.kpi .v{font-size:23px;font-weight:700;letter-spacing:-.02em;margin:6px 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .s{font-size:12px;color:var(--muted)}
+.kpi .s b{color:var(--text-2)}
+.delta{font-size:12px;font-weight:700;white-space:nowrap}
+.delta.up,.pos{color:var(--good-text)} .delta.down,.neg{color:var(--crit-text)} .delta.flat{color:var(--muted)}
+.prog{height:6px;background:var(--grid);border-radius:3px;overflow:hidden;margin-top:8px}
+.prog>i{display:block;height:100%;background:var(--brand);border-radius:3px}
+/* layout */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px;margin-bottom:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px;margin-bottom:16px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px 18px;box-shadow:var(--shadow);min-width:0;margin-bottom:16px}
+.grid2>.panel,.grid3>.panel{margin-bottom:0}
+.panel-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px 12px;margin-bottom:12px;flex-wrap:wrap}
+.panel-h h3{margin:0;font-size:15px;letter-spacing:-.01em}
+.panel-sub{margin:2px 0 0;color:var(--muted);font-size:12px}
+.panel-act{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+/* chart */
+.chart{position:relative;min-width:0}
+.chart svg{display:block;overflow:visible;touch-action:pan-y}
+.chart .grid{stroke:var(--grid);stroke-width:1}
+.chart .axis{stroke:var(--axis);stroke-width:1}
+.chart .tick{fill:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+.chart .lab{fill:var(--text-2);font-size:12px}
+.chart .val{fill:var(--text-2);font-size:11.5px;font-variant-numeric:tabular-nums}
+.chart .endlab{fill:var(--text-2);font-size:11.5px}
+.chart .line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .dot{stroke:var(--surface);stroke-width:2}
+.chart .target{stroke:var(--text-2);stroke-dasharray:4 4;stroke-width:1}
+.chart .xhair{stroke:var(--axis);stroke-width:1}
+.chart .hl{fill:var(--text);opacity:.05}
+.chart .hit{fill:transparent}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--text-2);margin:0 0 8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.legend i.dash{height:3px;border-radius:0;vertical-align:3px;background-image:linear-gradient(90deg,currentColor 60%,transparent 60%)!important;background-size:5px 3px!important}
+.tip{position:absolute;z-index:5;pointer-events:none;background:var(--surface);border:1px solid var(--border-strong);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 6px 20px rgba(15,27,45,.16);min-width:150px;white-space:nowrap}
+.tip b{display:block;margin-bottom:4px}
+.tip .tr{display:flex;align-items:center;gap:6px}
+.tip .tr i{width:8px;height:8px;border-radius:2px;flex:none}
+.tip .tr span{color:var(--text-2);flex:1}
+.tip .tr strong{font-variant-numeric:tabular-nums;margin-left:12px}
+.tip .tot{border-top:1px solid var(--border);margin-top:4px;padding-top:4px}
+/* controls */
+input,select{font:inherit;font-size:13px;color:var(--text);background:var(--surface);border:1px solid var(--border-strong);border-radius:8px;padding:7px 10px;min-width:0}
+input:focus,select:focus{outline:2px solid var(--brand);outline-offset:-1px}
+input[type=range]{padding:0;border:0;accent-color:var(--brand);width:100%}
+.btn{font-weight:600;font-size:13px;border-radius:8px;padding:8px 14px;border:1px solid var(--brand);background:var(--brand);color:#fff;cursor:pointer;white-space:nowrap}
+.btn.ghost{background:var(--surface);color:var(--text);border-color:var(--border-strong)}
+.btn.danger{background:var(--crit);border-color:var(--crit)}
+.btn:hover{filter:brightness(1.06)}
+.seg{display:inline-flex;border:1px solid var(--border-strong);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:6px 12px;font-size:12.5px;color:var(--text-2);cursor:pointer}
+.seg button+button{border-left:1px solid var(--border-strong)}
+.seg button.on{background:var(--brand);color:#fff}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:14px;overflow-x:auto}
+.tabs button{background:none;border:0;padding:10px 14px;font-weight:600;color:var(--text-2);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+.tabs button.on{color:var(--brand);border-bottom-color:var(--brand)}
+/* table */
+.tb-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.tb-tools .sp{flex:1}
+.tb-q{width:220px;max-width:100%}
+.tb-count{font-size:12px;color:var(--muted)}
+.tb-wrap{overflow:auto;border:1px solid var(--border);border-radius:10px;max-height:560px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-weight:600;color:var(--text-2);padding:9px 12px;border-bottom:1px solid var(--border);white-space:nowrap;z-index:1}
+.tbl th.sortable{cursor:pointer;user-select:none}
+.tbl th.sortable:hover{color:var(--text)}
+.tbl td{padding:8px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl tbody tr:hover{background:var(--surface-2)}
+.tbl tr.clickable{cursor:pointer}
+.tbl tfoot td{position:sticky;bottom:0;background:var(--surface-2);font-weight:700;border-top:1px solid var(--border-strong)}
+.tbl input,.tbl select{padding:4px 6px;font-size:12.5px}
+.tbl input[type=number]{width:120px;text-align:right}
+.tbl td.empty{text-align:center;color:var(--muted);padding:28px}
+.sub-row{color:var(--muted);font-size:12px}
+/* badges & alerts */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.b-good{background:var(--good-bg);color:var(--good-text)}
+.b-warn{background:var(--warn-bg);color:var(--warn-text)}
+.b-serious{background:var(--serious-bg);color:var(--serious-text)}
+.b-crit{background:var(--crit-bg);color:var(--crit-text)}
+.b-info{background:var(--info-bg);color:var(--info)}
+.b-mute{background:var(--mute-bg);color:var(--muted)}
+.notice{display:flex;gap:12px;align-items:flex-start;background:var(--warn-bg);border:1px solid var(--warn);padding:12px 14px;border-radius:10px;margin-bottom:16px;font-size:13px}
+.notice.info{background:var(--info-bg);border-color:var(--info)}
+.alerts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.alerts li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border)}
+.alerts b{display:block;font-size:13px}
+.alerts span{font-size:12.5px;color:var(--text-2)}
+.ic{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;line-height:1}
+.ic.good{background:var(--good)} .ic.warn{background:var(--warn);color:#3a2a00} .ic.crit{background:var(--crit)}
+/* forms */
+.form{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text-2);font-weight:600}
+.form .full{grid-column:1/-1}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.form h4{grid-column:1/-1;margin:6px 0 0;font-size:13px;color:var(--text)}
+.mini{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.mini div{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;min-width:0}
+.mini span{font-size:12px;color:var(--text-2)}
+.mini b{display:block;font-size:16px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini em{font-style:normal;font-size:12px}
+.sim{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:22px}
+.rng{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;font-size:12.5px;color:var(--text-2);font-weight:600}
+.rng .row{display:flex;justify-content:space-between;gap:8px}
+.rng output{color:var(--text);font-variant-numeric:tabular-nums}
+.formula{margin:0;padding-left:18px;color:var(--text-2);font-size:13px;line-height:1.9}
+.formula code{background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--text);font-size:12.5px}
+/* modal & toast */
+.modal-bg{position:fixed;inset:0;background:rgba(8,18,32,.5);display:grid;place-items:center;z-index:100;padding:16px}
+.modal{background:var(--surface);border-radius:14px;width:min(760px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.modal-h{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-h h3{margin:0;font-size:16px}
+.modal-b{padding:18px 20px;overflow:auto}
+.modal-f{display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border);flex-wrap:wrap}
+.modal-f .left{margin-right:auto}
+.icon-btn{background:none;border:0;font-size:18px;color:var(--text-2);cursor:pointer;padding:4px 8px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:10px;z-index:200;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100vw - 32px)}
+/* mobile */
+@media (max-width:900px){
+  .side{transform:translateX(-100%)}
+  body.nav-open .side{transform:none}
+  body.nav-open .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:35}
+  .main{margin-left:0}
+  .menu-btn{display:inline-flex}
+  .top{padding:10px 16px}
+  .top .chip.date{display:none}
+  .content{padding:16px 16px 40px}
+  .sim{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+  .kpi{padding:12px 14px}
+  .kpi .v{font-size:19px}
+}
+</style>
+</head>
+<body>
+<aside class="side" id="side">
+  <div class="brand"><b>정형외과</b><span>통합 경영관리 대시보드</span></div>
+  <nav class="nav" id="nav">
+    <a href="#dashboard" data-p="dashboard"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>경영 대시보드</a>
+    <a href="#hr" data-p="hr"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/></svg>인사·근태 관리</a>
+    <a href="#payroll" data-p="payroll"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="13" rx="2"/><path d="M2.5 10h19M6.5 15h4"/></svg>급여 관리</a>
+    <a href="#finance" data-p="finance"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>매출·재무 관리</a>
+    <a href="#marketing" data-p="marketing"><svg viewBox="0 0 24 24"><path d="M3 10v4l11 5V5L3 10z"/><path d="M17 9a3 3 0 0 1 0 6"/></svg>마케팅 관리</a>
+    <a href="#data" data-p="data"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>데이터 관리</a>
+  </nav>
+  <div class="side-foot">시제품 v0.1<br>모든 수치는 가상의 예시 데이터이며 실제 환자·직원 개인정보를 포함하지 않습니다.</div>
+</aside>
+<div class="scrim" id="scrim"></div>
+<div class="main">
+  <header class="top">
+    <button class="menu-btn" id="menu" aria-label="메뉴 열기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <h1 id="title">경영 대시보드</h1>
+    <span class="sp"></span>
+    <span class="chip date" id="chip-date"></span>
+    <span class="chip" id="chip-save"><span class="dot"></span><span>저장됨</span></span>
+  </header>
+  <main class="content" id="view"></main>
+</div>
+
+<script>
+'use strict';
+/* ========== 기본 유틸 ========== */
+const KEY = 's365_mgmt_dashboard_v1';
+const nf = new Intl.NumberFormat('ko-KR');
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const num = n => nf.format(Math.round(n || 0));
+const won = n => num(n) + '원';
+const sum = (arr, k) => arr.reduce((a, r) => a + (typeof k === 'function' ? k(r) : (+r[k] || 0)), 0);
+const toInt = v => { const n = Math.round(+String(v).replace(/[^\d.-]/g, '')); return isFinite(n) ? n : 0; };
+const toPos = v => Math.max(0, toInt(v));
+
+// 한국식 금액 표기: 9억 5,320만원
+function krw(n) {
+  n = Math.round(n || 0);
+  const sign = n < 0 ? '-' : '';
+  const a = Math.abs(n);
+  let eok = Math.floor(a / 1e8), man = Math.round((a % 1e8) / 1e4);
+  if (man >= 10000) { eok++; man = 0; }
+  if (!eok && !man) return sign + num(a) + '원';
+  return sign + (eok ? eok + '억' + (man ? ' ' : '') : '') + (man ? num(man) + '만' : '') + '원';
+}
+function axisKrw(n) {
+  const a = Math.abs(n);
+  if (a >= 1e8) return (n / 1e8).toFixed(a % 1e8 === 0 ? 0 : 1) + '억';
+  if (a >= 1e4) return num(n / 1e4) + '만';
+  return num(n);
+}
+const pct = (x, d = 1) => (isFinite(x) ? (x * 100).toFixed(d) : '—') + '%';
+const sgnPct = x => (x > 0 ? '+' : '') + pct(x);
+const pp = x => (x > 0 ? '+' : '') + (x * 100).toFixed(1) + '%p';
+function deltaHTML(x, goodUp = true) {
+  if (x == null || !isFinite(x)) return '';
+  const cls = Math.abs(x) < 0.0005 ? 'flat' : ((x > 0) === goodUp ? 'up' : 'down');
+  return `<span class="delta ${cls}">${x > 0 ? '▲' : x < 0 ? '▼' : '–'} ${pct(Math.abs(x))}</span>`;
+}
+
+/* ========== 날짜 ========== */
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const mkey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+const dim = (y, m) => new Date(y, m, 0).getDate();
+const WD = ['일', '월', '화', '수', '목', '금', '토'];
+const mon = k => `${+k.slice(5)}월`;
+const monFull = k => `${k.slice(0, 4)}년 ${+k.slice(5)}월`;
+const fmtDate = d => `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[d.getDay()]})`;
+const hm = m => m == null ? '—' : `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+const parseHM = s => { if (!s) return null; const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+function tenure(hire, base = D.base) {
+  const h = parseD(hire);
+  let m = (base.getFullYear() - h.getFullYear()) * 12 + base.getMonth() - h.getMonth() - (base.getDate() < h.getDate() ? 1 : 0);
+  m = Math.max(0, m);
+  return m >= 12 ? `${Math.floor(m / 12)}년 ${m % 12}개월` : `${m}개월`;
+}
+// 연차: 1년 미만 월 1일(최대 11일), 1년 이상 15일 + 2년마다 1일(최대 25일) — 입사일 기준 단순화
+function leaveGranted(hire, base) {
+  const h = parseD(hire);
+  const m = (base.getFullYear() - h.getFullYear()) * 12 + base.getMonth() - h.getMonth() - (base.getDate() < h.getDate() ? 1 : 0);
+  if (m < 12) return Math.max(0, Math.min(11, m));
+  return Math.min(25, 15 + Math.floor((Math.floor(m / 12) - 1) / 2));
+}
+
+/* ========== 기준 정보 ========== */
+const TYPES = [['opd', '외래 진찰'], ['img', '영상검사'], ['pt', '물리치료'], ['manual', '도수치료'], ['eswt', '체외충격파'], ['inj', '주사·시술']];
+const TYPE_SHARE = [.22, .14, .10, .24, .14, .16];
+const COSTS = [['labor', '인건비'], ['rent', '임대료'], ['material', '재료·약품비'], ['ad', '광고비'], ['equip', '장비 리스·감가'], ['util', '관리비·공과금'], ['other', '기타 운영비']];
+const CH = [['nsa', '네이버 검색광고'], ['blog', '네이버 블로그'], ['place', '네이버 지도'], ['sms', '문자 캠페인'], ['insta', '인스타그램']];
+const ORG = [['ref', '지인 소개'], ['walk', '간판·워크인'], ['etc', '기타']];
+const DEPTS = [
+  ['의료진', [['대표원장', 1], ['원장', 4]]],
+  ['간호부', [['실장', 1], ['팀장', 2], ['주임', 3], ['사원', 7]]],
+  ['물리치료실', [['실장', 1], ['팀장', 2], ['주임', 3], ['사원', 6]]],
+  ['영상의학실', [['팀장', 1], ['주임', 1], ['사원', 2]]],
+  ['원무과', [['실장', 1], ['팀장', 1], ['주임', 2], ['사원', 5]]],
+  ['경영지원팀', [['팀장', 1], ['주임', 1], ['사원', 2]]],
+  ['시설·환경', [['주임', 1], ['사원', 2]]],
+];
+const DEPT_NAMES = DEPTS.map(d => d[0]);
+const RANKS = ['대표원장', '원장', '실장', '팀장', '주임', '사원'];
+const PAY = { 대표원장: [0, 0], 원장: [24000000, 0], 실장: [4500000, 400000], 팀장: [3800000, 300000], 주임: [3200000, 100000], 사원: [2700000, 0] };
+const LIC = ['간호부', '물리치료실', '영상의학실'];
+const STATUSES = ['정상', '지각', '조퇴', '결근', '휴가', '휴무'];
+const ST_CLS = { 정상: 'good', 지각: 'warn', 조퇴: 'serious', 결근: 'crit', 휴가: 'info', 휴무: 'mute' };
+const ST_COLOR = { 정상: 'var(--good)', 지각: 'var(--warn)', 조퇴: 'var(--serious)', 결근: 'var(--crit)', 휴가: 'var(--info)', 휴무: 'var(--mute)' };
+const SC = i => `var(--s${i + 1})`;
+// 예시 요율 (실제 적용 전 반드시 검증 필요)
+const RATE = { pension: 0.0475, pensionCap: 6370000, health: 0.03595, ltc: 0.1314, emp: 0.009, empEr: 0.0115, injury: 0.007, mealFree: 200000 };
+// 연도별 최저임금 시급 (최저임금위원회 결정·고용노동부 고시, 2027년은 2026.7.14 의결)
+const MIN_WAGE = [[2017, 6470], [2018, 7530], [2019, 8350], [2020, 8590], [2021, 8720], [2022, 9160], [2023, 9620], [2024, 9860], [2025, 10030], [2026, 10320], [2027, 10700]];
+const MIN_HOURS = 209; // 주 40시간 + 주휴 8시간, 월 평균 4.345주
+const minWage = y => (MIN_WAGE.find(r => r[0] === y) || MIN_WAGE[MIN_WAGE.length - 1])[1];
+const SUR = ['김', '이', '박', '최', '정', '강', '조', '윤', '장', '임', '한', '오', '서', '신', '권', '황', '안', '송', '전', '홍'];
+const GIV = ['민', '서', '지', '현', '수', '영', '준', '하', '윤', '예', '도', '유', '은', '채', '진', '우', '연', '아', '주', '혜', '성', '다', '소', '재', '태', '나', '경', '미', '희', '원'];
+
+/* ========== 가상 데이터 생성 ========== */
+function rng(seed) {
+  return function () {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const sumType = t => TYPES.reduce((a, [k]) => a + (+t[k] || 0), 0);
+function shift(dt) { const w = dt.getDay(); return w === 0 ? [540, 780] : w === 6 ? [540, 840] : [540, 1080]; }
+function scheduled(e, dt) {
+  const w = dt.getDay();
+  if (e.doc >= 0 && w === 0) return Math.floor(dt.getTime() / 6048e5) % 5 === e.doc; // 일요일 당직 원장 순환
+  return !e.off.includes(w);
+}
+function genAtt(e, y, mo, today, R) {
+  const recs = [], h = parseD(e.hire);
+  for (let d = 1; d <= today; d++) {
+    const dt = new Date(y, mo, d);
+    if (dt < h) continue;
+    if (!scheduled(e, dt)) { recs.push({ d, s: '휴무', i: null, o: null }); continue; }
+    const [st, en] = shift(dt);
+    const r = R();
+    let s = '정상', i = st - Math.round(R() * 25), o = en + Math.round(R() * 30);
+    if (R() < 0.1) o = en + 60 + Math.round(R() * 60);
+    if (r < 0.02) { s = '결근'; i = o = null; }
+    else if (r < 0.05) { s = '휴가'; i = o = null; }
+    else if (r < 0.11) { s = '지각'; i = st + 5 + Math.round(R() * 35); }
+    else if (r < 0.14 && d !== today) { s = '조퇴'; o = en - 60 - Math.round(R() * 120); }
+    if (d === today) o = null; // 오늘은 근무 중
+    recs.push({ d, s, i, o });
+  }
+  return recs;
+}
+function generate(baseStr) {
+  const R = rng(365022), base = parseD(baseStr), by = base.getFullYear(), bmo = base.getMonth();
+  const months = [];
+  for (let i = 24; i >= 1; i--) months.push(mkey(new Date(by, bmo - i, 1)));
+
+  // 직원 50명 (가상 이름)
+  const used = new Set(), pick = a => a[Math.floor(R() * a.length)];
+  const mkName = () => { let n; do { n = pick(SUR) + pick(GIV) + pick(GIV); } while (used.has(n) || n[1] === n[2]); used.add(n); return n; };
+  const emps = [], doctors = [];
+  const open = parseD('2022-03-02').getTime(), late = addDays(base, -35).getTime();
+  let no = 1;
+  DEPTS.forEach(([dept, ranks]) => ranks.forEach(([rank, cnt]) => {
+    for (let c = 0; c < cnt; c++) {
+      const isDoc = dept === '의료진', owner = rank === '대표원장';
+      let u = R();
+      if (isDoc) u = owner ? 0 : u * 0.45; else if (rank === '실장' || rank === '팀장') u *= 0.4; else if (rank === '주임') u *= 0.7;
+      const [b, p] = PAY[rank];
+      const e = {
+        id: 'E' + String(no++).padStart(3, '0'), name: mkName(), dept, rank,
+        hire: ymd(new Date(open + (late - open) * u)),
+        base: b ? Math.round(b * (0.96 + R() * 0.1) / 10000) * 10000 : 0, pos: p,
+        other: LIC.includes(dept) ? 100000 : 0, meal: owner ? 0 : 200000,
+        ot: isDoc ? 0 : Math.round(R() * 16),
+        night: (dept === '간호부' || dept === '영상의학실') ? Math.round(R() * 6) : 0,
+        hol: isDoc || R() < 0.5 ? 0 : Math.round(4 + R() * 8),
+        owner, doc: isDoc ? doctors.length : -1, off: null, leavePrev: 0,
+      };
+      if (isDoc) { e.off = [0, 1 + e.doc % 5]; doctors.push(e.id); }
+      else { const r = R(), wd = 1 + Math.floor(R() * 5); e.off = r < 0.6 ? [0, wd] : r < 0.85 ? [6, wd] : [0, 6]; }
+      e.leavePrev = Math.floor(leaveGranted(e.hire, base) * (0.15 + R() * 0.45));
+      emps.push(e);
+    }
+  }));
+
+  // 24개월 매출·비용·마케팅 (12개월 표시 + 전년 동기 비교용 12개월)
+  const SEA = { 1: 1.04, 2: .94, 3: 1.02, 4: 1, 5: 1.01, 6: .98, 7: 1.03, 8: 1, 9: .99, 10: 1.03, 11: 1.02, 12: 1.05 };
+  const fin = [], mkt = [], payFactor = [];
+  const rr = (a, b) => a + R() * (b - a);
+  let prevRev = 0;
+  months.forEach((k, i) => {
+    const mo = +k.slice(5), tot = (7.4e8 + 2.3e8 * i / 23) * SEA[mo] * rr(.98, 1.02);
+    const sh = TYPE_SHARE.map(s => s * rr(.92, 1.08)), ss = sh.reduce((a, b) => a + b, 0);
+    const type = {};
+    TYPES.forEach(([t], j) => type[t] = Math.round(tot * sh[j] / ss / 10000) * 10000);
+    const rev = sumType(type);
+    fin.push({
+      type, doc: [.26, .19, .19, .18, .18].map(s => +(s * rr(.93, 1.07)).toFixed(4)),
+      pt: Math.round(rev / (98000 + i * 450) * rr(.98, 1.02)),
+      rent: i < 5 ? 42000000 : 45000000,
+      material: Math.round(rev * rr(.125, .145) / 10000) * 10000,
+      equip: i < 12 ? 27000000 : 30000000,
+      util: Math.round((9.5e6 + ([12, 1, 2, 7, 8].includes(mo) ? 2.5e6 : 0) + R() * 1e6) / 10000) * 10000,
+      other: Math.round(rr(20e6, 28e6) / 10000) * 10000,
+      target: Math.round((i ? prevRev * 1.04 : rev * 1.02) / 1e7) * 1e7,
+    });
+    prevRev = rev;
+    payFactor.push(i === 23 ? 1 : +((0.84 + 0.16 * i / 23) * rr(.985, 1.015)).toFixed(4));
+    const g = 0.8 + 0.2 * i / 23;
+    const mk = (cost, cpi, br, nr, val) => {
+      const inq = Math.round(cost / cpi), book = Math.round(inq * br), newp = Math.round(book * nr);
+      return { cost: Math.round(cost / 10000) * 10000, inq, book, newp, rev: Math.round(book * val / 10000) * 10000 };
+    };
+    mkt.push({
+      ch: {
+        nsa: mk(rr(9e6, 12e6) * g, rr(38000, 46000), rr(.5, .6), rr(.82, .9), rr(260000, 320000)),
+        blog: mk(rr(3e6, 4e6), rr(45000, 60000), rr(.45, .55), rr(.85, .92), rr(240000, 300000)),
+        place: mk(rr(2e6, 3e6) * g, rr(16000, 22000), rr(.55, .65), rr(.85, .92), rr(250000, 300000)),
+        sms: mk(rr(.9e6, 1.5e6), rr(14000, 20000), rr(.65, .75), rr(.1, .2), rr(150000, 190000)),
+        insta: mk(rr(2e6, 3.5e6) * g, rr(60000, 90000), rr(.35, .45), rr(.88, .95), rr(200000, 260000)),
+      },
+      org: { ref: Math.round(rr(90, 130) * g), walk: Math.round(rr(60, 90)), etc: Math.round(rr(20, 40)) },
+    });
+  });
+
+  // 최근 91일 일별 매출 (마감월은 월 합계를 요일 가중치로 배분)
+  const WDW = [.45, 1.25, 1.1, 1.05, 1.05, 1.1, .95];
+  const daily = [], start = addDays(base, -90);
+  const keys = [];
+  for (let d = new Date(start); d <= base; d = addDays(d, 1)) { const k = mkey(d); if (!keys.includes(k)) keys.push(k); }
+  const last = fin[23], lastRev = sumType(last.type), [ly, lm] = months[23].split('-').map(Number), lastDim = dim(ly, lm);
+  const ticket = lastRev / last.pt;
+  keys.forEach(k => {
+    const [y, m] = k.split('-').map(Number), n = dim(y, m), idx = months.indexOf(k);
+    const w = [];
+    for (let d = 1; d <= n; d++) w.push(WDW[new Date(y, m - 1, d).getDay()] * rr(.9, 1.1));
+    const sw = w.reduce((a, b) => a + b, 0);
+    for (let d = 1; d <= n; d++) {
+      const dt = new Date(y, m - 1, d);
+      if (dt < start || dt > base) continue;
+      let rev, pt;
+      if (idx >= 0) { const f = fin[idx]; rev = sumType(f.type) * w[d - 1] / sw; pt = f.pt * w[d - 1] / sw; }
+      else { rev = lastRev / lastDim * 1.03 * w[d - 1] / 0.993; pt = rev / (ticket * rr(.97, 1.03)); }
+      pt = Math.round(pt);
+      daily.push({ date: ymd(dt), rev: Math.round(rev / 1000) * 1000, pt, np: Math.round(pt * rr(.08, .11)) });
+    }
+  });
+
+  const att = {};
+  emps.forEach(e => att[e.id] = genAtt(e, by, bmo, base.getDate(), R));
+  return { v: 1, baseDate: baseStr, months, fin, mkt, payFactor, emps, doctors, att, daily, curTarget: Math.round(lastRev * 1.05 / 1e7) * 1e7 };
+}
+
+/* ========== 계산 (모든 화면이 이 결과를 사용) ========== */
+let S, D = {};
+const r10 = n => Math.round(n / 10) * 10;
+function incomeTaxExample(t) { // 단순 누진 예시 (간이세액표 아님)
+  if (t <= 1.5e6) return 0;
+  if (t <= 3e6) return (t - 1.5e6) * 0.03;
+  if (t <= 5e6) return 45000 + (t - 3e6) * 0.08;
+  if (t <= 1e7) return 205000 + (t - 5e6) * 0.15;
+  return 955000 + (t - 1e7) * 0.3;
+}
+function payCalc(e) {
+  if (e.owner) return { e, hourly: 0, hourly15: 0, base: 0, pos: 0, otPay: 0, nightPay: 0, holPay: 0, meal: 0, other: 0, gross: 0, pension: 0, health: 0, ltc: 0, empIns: 0, tax: 0, local: 0, ded: 0, net: 0, er: 0, cost: 0 };
+  const hourly = e.base / 209;
+  const otPay = r10(hourly * 1.5 * e.ot), nightPay = r10(hourly * 0.5 * e.night), holPay = r10(hourly * 1.5 * e.hol);
+  const gross = e.base + e.pos + otPay + nightPay + holPay + e.meal + e.other;
+  const taxable = Math.max(0, gross - Math.min(e.meal, RATE.mealFree));
+  const pension = r10(Math.min(taxable, RATE.pensionCap) * RATE.pension);
+  const health = r10(taxable * RATE.health), ltc = r10(health * RATE.ltc), empIns = r10(taxable * RATE.emp);
+  const tax = r10(incomeTaxExample(taxable)), local = r10(tax * 0.1);
+  const ded = pension + health + ltc + empIns + tax + local;
+  const er = pension + health + ltc + r10(taxable * RATE.empEr) + r10(taxable * RATE.injury); // 사업주 부담 (예시)
+  return { e, hourly: Math.round(hourly), hourly15: Math.round(hourly * 1.5), base: e.base, pos: e.pos, otPay, nightPay, holPay, meal: e.meal, other: e.other, gross, pension, health, ltc, empIns, tax, local, ded, net: gross - ded, er, cost: gross + er };
+}
+function workMin(r) { if (r.i == null || r.o == null) return 0; const span = r.o - r.i; return Math.max(0, span - (span >= 360 ? 60 : 0)); }
+function derive() {
+  D = {};
+  D.pay = S.emps.map(payCalc);
+  D.payGross = sum(D.pay, 'gross'); D.payNet = sum(D.pay, 'net'); D.payDed = sum(D.pay, 'ded'); D.payEr = sum(D.pay, 'er'); D.laborCost = sum(D.pay, 'cost');
+  D.mkt = S.mkt.map((m, i) => {
+    const ch = {};
+    CH.forEach(([k]) => { const x = m.ch[k]; ch[k] = { ...x, conv: x.inq ? x.book / x.inq : 0, cac: x.newp ? x.cost / x.newp : 0, roi: x.cost ? (x.rev - x.cost) / x.cost : 0 }; });
+    const vals = Object.values(ch);
+    const r = { k: S.months[i], ch, cost: sum(vals, 'cost'), inq: sum(vals, 'inq'), book: sum(vals, 'book'), newp: sum(vals, 'newp'), rev: sum(vals, 'rev'), org: ORG.reduce((a, [k]) => a + (+m.org[k] || 0), 0) };
+    r.allNew = r.newp + r.org; r.cac = r.newp ? r.cost / r.newp : 0; r.roi = r.cost ? (r.rev - r.cost) / r.cost : 0; r.conv = r.inq ? r.book / r.inq : 0;
+    return r;
+  });
+  D.fin = S.months.map((k, i) => {
+    const f = S.fin[i], rev = sumType(f.type);
+    const costs = { labor: Math.round(D.laborCost * S.payFactor[i]), rent: f.rent, material: f.material, ad: D.mkt[i].cost, equip: f.equip, util: f.util, other: f.other };
+    const total = sum(COSTS, ([c]) => costs[c]), op = rev - total;
+    return { k, i, f, rev, costs, labor: costs.labor, ad: costs.ad, total, op, margin: rev ? op / rev : 0, laborRatio: rev ? costs.labor / rev : 0, pt: f.pt, target: f.target };
+  });
+  D.fin.forEach((r, i) => { r.mom = i ? r.rev / D.fin[i - 1].rev - 1 : null; r.yoy = i >= 12 ? r.rev / D.fin[i - 12].rev - 1 : null; });
+  D.v12 = D.fin.slice(12); D.last = D.fin[23]; D.prev = D.fin[22];
+
+  D.base = parseD(S.baseDate); D.curK = mkey(D.base); D.day = D.base.getDate(); D.dim = dim(D.base.getFullYear(), D.base.getMonth() + 1);
+  D.byDate = Object.fromEntries(S.daily.map(r => [r.date, r]));
+  const zero = { rev: 0, pt: 0, np: 0 };
+  D.today = D.byDate[S.baseDate] || zero; D.yday = D.byDate[ymd(addDays(D.base, -1))] || zero;
+  D.cur = S.daily.filter(r => r.date.startsWith(D.curK));
+  D.mtd = { rev: sum(D.cur, 'rev'), pt: sum(D.cur, 'pt'), np: sum(D.cur, 'np') };
+  D.proj = D.mtd.rev / D.day * D.dim; D.target = S.curTarget; D.ach = D.target ? D.mtd.rev / D.target : 0;
+
+  D.att = {}; D.cnt = Object.fromEntries(STATUSES.map(s => [s, 0]));
+  S.emps.forEach(e => {
+    const recs = S.att[e.id] || [], today = recs.find(r => r.d === D.day);
+    const m = { work: 0, late: 0, early: 0, abs: 0, vac: 0, min: 0 };
+    recs.forEach(r => { if (r.i != null) m.work++; if (r.s === '지각') m.late++; if (r.s === '조퇴') m.early++; if (r.s === '결근') m.abs++; if (r.s === '휴가') m.vac++; m.min += workMin(r); });
+    const g = leaveGranted(e.hire, D.base), used = (+e.leavePrev || 0) + m.vac;
+    D.att[e.id] = { today, m, leave: { g, used, rem: g - used, rate: g ? used / g : 0 } };
+    if (today) D.cnt[today.s]++;
+  });
+  D.present = D.cnt['정상'] + D.cnt['지각'] + D.cnt['조퇴'];
+  D.sched = D.present + D.cnt['결근'] + D.cnt['휴가'];
+}
+
+/* ========== 저장 ========== */
+let saveOK = true;
+function load() {
+  try {
+    const o = JSON.parse(localStorage.getItem(KEY));
+    if (o && o.v === 1 && Array.isArray(o.emps) && o.months?.length === 24) return o;
+  } catch (e) { }
+  return null;
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); saveOK = true; } catch (e) { saveOK = false; }
+  const c = $('#chip-save');
+  c.classList.toggle('bad', !saveOK);
+  c.lastElementChild.textContent = saveOK ? '브라우저에 저장됨' : '저장 불가 (새로고침 시 초기화)';
+}
+function commit(msg) { save(); derive(); render(true); if (msg) toast(msg); }
+
+/* ========== 차트 (SVG, 외부 라이브러리 없음) ========== */
+const CHARTS = new Map();
+function niceTicks(lo, hi, count = 4) {
+  if (hi === lo) hi = lo + 1;
+  const raw = (hi - lo) / count, mag = 10 ** Math.floor(Math.log10(raw)), n = raw / mag;
+  const step = (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * mag;
+  const t = [];
+  for (let v = Math.floor(lo / step) * step; v <= Math.ceil(hi / step) * step + step / 2; v += step) t.push(+v.toFixed(6));
+  return t;
+}
+function barD(x, y, w, h, r, up) {
+  r = Math.min(r, w / 2, h);
+  if (r <= 0) return `M${x},${y}h${w}v${h}h${-w}Z`;
+  return up
+    ? `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`
+    : `M${x},${y}V${y + h - r}Q${x},${y + h} ${x + r},${y + h}H${x + w - r}Q${x + w},${y + h} ${x + w},${y + h - r}V${y}Z`;
+}
+function barH(x, y, w, h, r) {
+  r = Math.min(r, h / 2, w);
+  return `M${x},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h - r}Q${x + w},${y + h} ${x + w - r},${y + h}H${x}Z`;
+}
+const lastIdx = a => { for (let i = a.length - 1; i >= 0; i--) if (a[i] != null) return i; return -1; };
+function legendHTML(series) {
+  if (series.length < 2) return '';
+  return `<div class="legend">${series.map(s => `<span><i class="${s.dash ? 'dash' : ''}" style="background:${s.color};color:${s.color}"></i>${esc(s.name)}</span>`).join('')}</div>`;
+}
+function showTip(el, plot, tip, title, rows, fmt, total, x) {
+  const vis = rows.filter(r => r.v != null);
+  tip.innerHTML = `<b>${esc(title)}</b>` + vis.map(r => `<div class="tr"><i style="background:${r.color}"></i><span>${esc(r.name)}</span><strong>${esc(fmt(r.v))}</strong></div>`).join('')
+    + (total ? `<div class="tr tot"><span>합계</span><strong>${esc(fmt(sum(vis, 'v')))}</strong></div>` : '');
+  tip.hidden = false;
+  const tw = tip.offsetWidth, W = el.clientWidth;
+  let left = plot.offsetLeft + x + 14;
+  if (left + tw > W) left = plot.offsetLeft + x - tw - 14;
+  tip.style.left = Math.max(0, left) + 'px';
+  tip.style.top = (plot.offsetTop + 4) + 'px';
+}
+function drawChart(el, o) {
+  if (!el) return;
+  CHARTS.set(el, o);
+  (o.type === 'hbar' ? hbar : vchart)(el, o);
+}
+function vchart(el, o) {
+  const fmt = o.fmt || krw, afmt = o.axis || axisKrw, series = o.series, n = o.labels.length;
+  const stacked = o.type === 'stacked', isLine = o.type === 'line';
+  el.innerHTML = legendHTML(series) + '<div class="plot"></div><div class="tip" hidden></div>';
+  const plot = $('.plot', el), tip = $('.tip', el);
+  const W = Math.max(260, plot.clientWidth || 600), H = o.height || 240;
+  let hi = 0, lo = 0;
+  for (let i = 0; i < n; i++) {
+    if (stacked) hi = Math.max(hi, sum(series, s => Math.max(0, s.values[i] || 0)));
+    else series.forEach(s => { const v = s.values[i]; if (v == null) return; hi = Math.max(hi, v); lo = Math.min(lo, v); });
+  }
+  if (o.target != null) hi = Math.max(hi, o.target);
+  const ticks = niceTicks(lo, hi || 1, 4), y0 = ticks[0], y1 = ticks[ticks.length - 1];
+  const endLab = isLine && series.length > 1 && series.length <= 4 && W > 420;
+  const m = { l: o.left || 56, r: endLab ? 86 : 12, t: 10, b: 26 };
+  const pw = W - m.l - m.r, ph = H - m.t - m.b, band = pw / n;
+  const Y = v => m.t + ph - (v - y0) / (y1 - y0) * ph, X = i => m.l + band * (i + .5);
+  let g = '';
+  ticks.forEach(t => {
+    const y = Y(t);
+    g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y}" y2="${y}" class="${t === 0 ? 'axis' : 'grid'}"/><text x="${m.l - 8}" y="${y + 4}" class="tick" text-anchor="end">${esc(afmt(t))}</text>`;
+  });
+  const every = Math.max(1, Math.ceil(n / Math.max(1, Math.floor(pw / (o.labelW || 46)))));
+  o.labels.forEach((l, i) => { if (i % every === 0) g += `<text x="${X(i)}" y="${H - 7}" class="tick" text-anchor="middle">${esc(l)}</text>`; });
+  let marks = '';
+  if (!isLine) {
+    const k = stacked ? 1 : series.length, gw = Math.min(band * .72, k * 28), bw = Math.max(2, (gw - (k - 1) * 2) / k);
+    for (let i = 0; i < n; i++) {
+      if (stacked) {
+        let cum = 0, top = -1;
+        series.forEach((s, j) => { if ((s.values[i] || 0) > 0) top = j; });
+        series.forEach((s, j) => {
+          const v = Math.max(0, s.values[i] || 0);
+          if (!v) return;
+          const yt = Y(cum + v), yb = Y(cum) - (cum > 0 ? 2 : 0);
+          cum += v;
+          if (yb - yt > 0) marks += `<path d="${barD(X(i) - bw / 2, yt, bw, yb - yt, j === top ? 4 : 0, true)}" style="fill:${s.color}"/>`;
+        });
+      } else series.forEach((s, j) => {
+        const v = s.values[i];
+        if (v == null) return;
+        const x = X(i) - gw / 2 + j * (bw + 2), yt = Y(Math.max(v, 0)), yb = Y(Math.min(v, 0));
+        marks += `<path d="${barD(x, yt, bw, Math.max(1, yb - yt), 4, v >= 0)}" style="fill:${(o.colorFn && o.colorFn(i, j)) || s.color}"/>`;
+      });
+    }
+  } else {
+    series.forEach(s => {
+      let d = '', pen = false;
+      s.values.forEach((v, i) => { if (v == null) { pen = false; return; } d += (pen ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1); pen = true; });
+      marks += `<path d="${d}" class="line" style="stroke:${s.color}${s.dash ? ';stroke-dasharray:5 4' : ''}"/>`;
+      const li = lastIdx(s.values);
+      if (li >= 0 && !s.dash) marks += `<circle cx="${X(li)}" cy="${Y(s.values[li])}" r="4" class="dot" style="fill:${s.color}"/>`;
+    });
+  }
+  if (o.target != null) {
+    const y = Y(o.target);
+    marks += `<line x1="${m.l}" x2="${W - m.r}" y1="${y}" y2="${y}" class="target"/><text x="${W - m.r}" y="${y - 5}" text-anchor="end" class="tick">목표 ${esc(afmt(o.target))}</text>`;
+  }
+  if (endLab) {
+    const ls = series.map(s => { const li = lastIdx(s.values); return li < 0 ? null : { s, y: Y(s.values[li]) }; }).filter(Boolean).sort((a, b) => a.y - b.y);
+    for (let j = 1; j < ls.length; j++) if (ls[j].y - ls[j - 1].y < 14) ls[j].y = ls[j - 1].y + 14;
+    ls.forEach(L => marks += `<text x="${W - m.r + 10}" y="${L.y + 4}" class="endlab">${esc(L.s.name)}</text>`);
+  }
+  let ov = '';
+  for (let i = 0; i < n; i++) ov += `<rect x="${m.l + band * i}" y="${m.t}" width="${band}" height="${ph}" data-i="${i}" class="hit"/>`;
+  plot.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.title || '')}">${g}<rect class="hl" y="${m.t}" height="${ph}" width="${band}" visibility="hidden"/><g>${marks}</g><line class="xhair" y1="${m.t}" y2="${m.t + ph}" visibility="hidden"/><g class="hdots"></g>${ov}</svg>`;
+  const svg = $('svg', plot), xh = $('.xhair', svg), hl = $('.hl', svg), hd = $('.hdots', svg);
+  svg.addEventListener('pointermove', e => {
+    const t = e.target.closest('.hit');
+    if (!t) return;
+    const i = +t.dataset.i;
+    if (isLine) {
+      xh.setAttribute('x1', X(i)); xh.setAttribute('x2', X(i)); xh.setAttribute('visibility', 'visible');
+      hd.innerHTML = series.map(s => s.values[i] == null ? '' : `<circle cx="${X(i)}" cy="${Y(s.values[i])}" r="4.5" class="dot" style="fill:${s.color}"/>`).join('');
+    } else { hl.setAttribute('x', m.l + band * i); hl.setAttribute('visibility', 'visible'); }
+    showTip(el, plot, tip, (o.tipLabels || o.labels)[i], series.map(s => ({ name: s.name, color: s.color, v: s.values[i] })), fmt, stacked, X(i));
+  });
+  svg.addEventListener('pointerleave', () => { xh.setAttribute('visibility', 'hidden'); hl.setAttribute('visibility', 'hidden'); hd.innerHTML = ''; tip.hidden = true; });
+}
+function hbar(el, o) {
+  const fmt = o.fmt || krw, series = o.series, n = o.labels.length, k = series.length;
+  el.innerHTML = legendHTML(series) + '<div class="plot"></div><div class="tip" hidden></div>';
+  const plot = $('.plot', el), tip = $('.tip', el);
+  const W = Math.max(260, plot.clientWidth || 600);
+  const maxLab = Math.max(...o.labels.map(l => String(l).length));
+  const m = { l: Math.min(140, Math.max(56, maxLab * 12.5 + 10)), r: k === 1 ? 96 : 16, t: 4, b: 4 };
+  const bh = k === 1 ? 16 : 10, rowH = k === 1 ? 30 : k * (bh + 2) + 12, H = m.t + m.b + rowH * n;
+  const hi = Math.max(1, ...series.flatMap(s => s.values.map(v => v || 0)));
+  const pw = W - m.l - m.r, Xv = v => Math.max(0, v) / hi * pw;
+  let s = `<rect class="hl" x="0" width="${W}" height="${rowH}" visibility="hidden"/><line x1="${m.l}" x2="${m.l}" y1="${m.t}" y2="${H - m.b}" class="axis"/>`, ov = '';
+  o.labels.forEach((l, i) => {
+    const top = m.t + rowH * i, cy = top + rowH / 2, gh = k * bh + (k - 1) * 2;
+    s += `<text x="${m.l - 8}" y="${cy + 4}" text-anchor="end" class="lab">${esc(l)}</text>`;
+    series.forEach((se, j) => {
+      const v = se.values[i] || 0, w = Xv(v), y = cy - gh / 2 + j * (bh + 2);
+      if (w > 0.5) s += `<path d="${barH(m.l + 1, y, w, bh, 4)}" style="fill:${(o.colors && o.colors[i]) || se.color}"/>`;
+      if (k === 1) s += `<text x="${m.l + 1 + w + 6}" y="${cy + 4}" class="val">${esc(fmt(v))}</text>`;
+    });
+    ov += `<rect class="hit" x="0" y="${top}" width="${W}" height="${rowH}" data-i="${i}"/>`;
+  });
+  plot.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.title || '')}">${s}${ov}</svg>`;
+  const svg = $('svg', plot), hl = $('.hl', svg);
+  svg.addEventListener('pointermove', e => {
+    const t = e.target.closest('.hit');
+    if (!t) return;
+    const i = +t.dataset.i;
+    hl.setAttribute('y', m.t + rowH * i); hl.setAttribute('visibility', 'visible');
+    showTip(el, plot, tip, o.labels[i], series.map(se => ({ name: se.name, color: (o.colors && o.colors[i]) || se.color, v: se.values[i] })), fmt, false, m.l + Xv(Math.max(...series.map(se => se.values[i] || 0))));
+  });
+  svg.addEventListener('pointerleave', () => { hl.setAttribute('visibility', 'hidden'); tip.hidden = true; });
+}
+let rsT;
+window.addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => CHARTS.forEach((o, el) => { if (el.isConnected) drawChart(el, o); }), 150); });
+
+/* ========== 표 (검색·정렬·필터·CSV) ========== */
+const TS = {};
+const colVal = (r, c) => c.get ? c.get(r) : r[c.key];
+function table(mount, cfg) {
+  const st = TS[cfg.id] || (TS[cfg.id] = { q: '', f: {}, sk: cfg.sort || null, sd: cfg.sortDir || 1 });
+  const filters = cfg.filters || [];
+  mount.innerHTML = `<div class="tb-tools">
+      ${cfg.search !== false ? `<input type="search" class="tb-q" placeholder="${esc(cfg.ph || '검색')}" value="${esc(st.q)}" aria-label="표 검색">` : ''}
+      ${filters.map(f => `<select class="tb-f" data-k="${f.key}" aria-label="${esc(f.label)} 필터"><option value="">${esc(f.label)} 전체</option>${f.options.map(v => `<option${st.f[f.key] === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select>`).join('')}
+      <span class="tb-count"></span><span class="sp"></span>${cfg.tools || ''}${cfg.csv ? '<button class="btn ghost tb-csv">CSV 다운로드</button>' : ''}
+    </div><div class="tb-wrap"><table class="tbl"><thead></thead><tbody></tbody><tfoot></tfoot></table></div>`;
+  const rows = () => {
+    let rs = cfg.rows.slice();
+    const q = st.q.trim().toLowerCase();
+    if (q) rs = rs.filter(r => String(cfg.searchText ? cfg.searchText(r) : cfg.columns.map(c => colVal(r, c)).join(' ')).toLowerCase().includes(q));
+    filters.forEach(f => { const v = st.f[f.key]; if (v) rs = rs.filter(r => String(f.get ? f.get(r) : r[f.key]) === v); });
+    const c = st.sk && cfg.columns.find(c => c.key === st.sk);
+    if (c) rs.sort((a, b) => {
+      const x = c.sv ? c.sv(a) : colVal(a, c), y = c.sv ? c.sv(b) : colVal(b, c);
+      return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'ko')) * st.sd;
+    });
+    return rs;
+  };
+  const cell = (r, c) => c.html ? c.html(r) : esc(c.fmt ? c.fmt(colVal(r, c), r) : colVal(r, c));
+  function draw() {
+    const rs = rows();
+    $('thead', mount).innerHTML = '<tr>' + cfg.columns.map(c => `<th class="${c.num ? 'num' : ''}${c.nosort ? '' : ' sortable'}" data-k="${c.key}">${esc(c.label)}${st.sk === c.key ? (st.sd > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('') + '</tr>';
+    $('tbody', mount).innerHTML = rs.length ? rs.map(r => `<tr${cfg.onRow ? ' class="clickable"' : ''} data-id="${esc(cfg.rowId ? cfg.rowId(r) : '')}">${cfg.columns.map(c => `<td class="${c.num ? 'num' : ''}">${cell(r, c)}</td>`).join('')}</tr>`).join('')
+      : `<tr><td class="empty" colspan="${cfg.columns.length}">조건에 맞는 데이터가 없습니다</td></tr>`;
+    $('tfoot', mount).innerHTML = cfg.totals && rs.length ? '<tr>' + cfg.columns.map((c, i) => `<td class="${c.num ? 'num' : ''}">${i === 0 ? (cfg.totalLabel || '합계') : c.total ? esc(c.total === true ? (c.fmt || num)(sum(rs, r => +colVal(r, c) || 0)) : c.total(rs)) : ''}</td>`).join('') + '</tr>' : '';
+    $('.tb-count', mount).textContent = `${num(rs.length)}건`;
+  }
+  const q = $('.tb-q', mount);
+  if (q) q.addEventListener('input', () => { st.q = q.value; draw(); });
+  $$('.tb-f', mount).forEach(s => s.addEventListener('change', () => { st.f[s.dataset.k] = s.value; draw(); }));
+  $('thead', mount).addEventListener('click', e => {
+    const th = e.target.closest('th.sortable');
+    if (!th) return;
+    if (st.sk === th.dataset.k) st.sd *= -1; else { st.sk = th.dataset.k; st.sd = 1; }
+    draw();
+  });
+  $('tbody', mount).addEventListener('click', e => {
+    if (!cfg.onRow || e.target.closest('input,select,button,a')) return;
+    const tr = e.target.closest('tr[data-id]');
+    if (tr && tr.dataset.id) cfg.onRow(tr.dataset.id);
+  });
+  if (cfg.onChange) $('tbody', mount).addEventListener('change', e => cfg.onChange(e.target));
+  const csvB = $('.tb-csv', mount);
+  if (csvB) csvB.addEventListener('click', () => csvDownload(cfg.csv, cfg.columns.filter(c => !c.nocsv), rows()));
+  draw();
+}
+function csvDownload(name, cols, rs) {
+  const q = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const lines = [cols.map(c => q(c.label)).join(',')].concat(rs.map(r => cols.map(c => q(c.csv ? c.csv(r) : colVal(r, c))).join(',')));
+  download(`${name}_${S.baseDate}.csv`, '﻿' + lines.join('\r\n'), 'text/csv;charset=utf-8');
+}
+function download(name, text, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ========== UI 조각 ========== */
+const UI = { hrTab: 'list', attDay: null, finPeriod: 'daily', finMonth: 23, mktMonth: 23, sim: null };
+function kpi(label, value, sub, right = '', progress = null) {
+  return `<div class="kpi"><div class="l"><span>${label}</span>${right}</div><div class="v">${value}</div><div class="s">${sub}</div>${progress != null ? `<div class="prog"><i style="width:${Math.min(100, progress * 100).toFixed(1)}%"></i></div>` : ''}</div>`;
+}
+const panel = (title, body, sub = '', act = '') => `<section class="panel"><div class="panel-h"><div><h3>${title}</h3>${sub ? `<p class="panel-sub">${sub}</p>` : ''}</div>${act ? `<div class="panel-act">${act}</div>` : ''}</div>${body}</section>`;
+const badge = (t, cls) => `<span class="badge b-${cls}">${esc(t)}</span>`;
+const stBadge = s => s ? badge(s, ST_CLS[s]) : '<span class="sub-row">—</span>';
+const ICON = { good: '✓', warn: '!', crit: '!' };
+function toast(msg) {
+  $('.toast')?.remove();
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2400);
+}
+function modal(title, body, buttons) {
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-bg';
+  wrap.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-h"><h3>${esc(title)}</h3><button class="icon-btn" data-x aria-label="닫기">✕</button></div><form class="modal-b">${body}</form><div class="modal-f"></div></div>`;
+  const foot = $('.modal-f', wrap), form = $('form', wrap);
+  const close = () => { wrap.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  buttons.forEach(b => {
+    const el = document.createElement('button');
+    el.type = 'button'; el.className = 'btn ' + (b.cls || ''); el.textContent = b.label;
+    el.onclick = () => { if (b.fn(form, el) !== false) close(); };
+    foot.appendChild(el);
+  });
+  $('[data-x]', wrap).onclick = close;
+  wrap.addEventListener('click', e => { if (e.target === wrap) close(); });
+  form.addEventListener('submit', e => e.preventDefault());
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(wrap);
+  $('input,select', form)?.focus();
+}
+const fval = (form, n) => form.elements[n].value;
+const opts = (list, sel) => list.map(v => Array.isArray(v) ? `<option value="${esc(v[0])}"${String(v[0]) === String(sel) ? ' selected' : ''}>${esc(v[1])}</option>` : `<option${v === sel ? ' selected' : ''}>${esc(v)}</option>`).join('');
+const monthOpts = sel => opts(D.v12.map(r => [r.i, monFull(r.k)]).reverse(), sel);
+
+/* ========== 1. 메인 경영 대시보드 ========== */
+function computeAlerts() {
+  const a = [], L = D.last, lr = L.laborRatio;
+  a.push(lr > .35 ? { lv: 'crit', t: '인건비율 주의', d: `${mon(L.k)} 매출 대비 인건비율 ${pct(lr)} — 관리 기준 35% 초과` }
+    : lr > .30 ? { lv: 'warn', t: '인건비율 관찰 필요', d: `${mon(L.k)} 인건비율 ${pct(lr)} (관리 구간 30~35%)` }
+      : { lv: 'good', t: '인건비율 양호', d: `${mon(L.k)} 인건비율 ${pct(lr)} (30% 이하)` });
+  const pace = D.target ? D.proj / D.target : 0;
+  a.push(pace >= 1 ? { lv: 'good', t: '이번 달 목표 달성 예상', d: `월말 예상 ${krw(D.proj)} · 목표 대비 ${pct(pace)}` }
+    : pace >= .95 ? { lv: 'warn', t: '이번 달 목표 근접', d: `월말 예상 ${krw(D.proj)} · 목표까지 ${krw(D.target - D.proj)} 부족 예상` }
+      : { lv: 'crit', t: '이번 달 목표 미달 우려', d: `월말 예상 ${krw(D.proj)} · 목표 대비 ${pct(pace)}` });
+  const c = D.cnt;
+  if (c['결근'] || c['지각']) a.push({ lv: c['결근'] ? 'crit' : 'warn', t: '오늘 근태 확인 필요', d: `지각 ${c['지각']}명 · 결근 ${c['결근']}명 · 조퇴 ${c['조퇴']}명` });
+  const dm = L.margin - D.prev.margin;
+  a.push(dm < -0.03 ? { lv: 'warn', t: '영업이익률 하락', d: `${mon(L.k)} ${pct(L.margin)} · 전월 대비 ${pp(dm)}` } : { lv: 'good', t: '영업이익률 안정', d: `${mon(L.k)} ${pct(L.margin)} · 전월 대비 ${pp(dm)}` });
+  const mk = D.mkt[23], low = CH.filter(([k]) => mk.ch[k].roi < 1);
+  if (low.length) a.push({ lv: 'warn', t: 'ROI 100% 미만 마케팅 채널', d: low.map(([k, n]) => `${n} ${pct(mk.ch[k].roi, 0)}`).join(' · ') });
+  return a;
+}
+function pageDashboard(v) {
+  const L = D.last, P = D.prev, t = D.today, y = D.yday, c = D.cnt, lr = L.laborRatio;
+  const lrLv = lr > .35 ? 'crit' : lr > .30 ? 'warn' : 'good';
+  const last30 = S.daily.slice(-30);
+  const issues = S.emps.filter(e => ['지각', '결근', '조퇴'].includes(D.att[e.id].today?.s));
+  v.innerHTML = `
+  <p class="page-desc">${fmtDate(D.base)} 기준 병원 운영 현황입니다. 월간 인건비·영업이익은 최근 마감월(${monFull(L.k)}) 기준입니다.</p>
+  <div class="kpis">
+    ${kpi('오늘 매출', krw(t.rev), `어제 ${krw(y.rev)}`, y.rev ? deltaHTML(t.rev / y.rev - 1) : '')}
+    ${kpi(`${mon(D.curK)} 누적 매출`, krw(D.mtd.rev), `목표 ${krw(D.target)} · 달성률 <b>${pct(D.ach)}</b>`, '', D.ach)}
+    ${kpi('오늘 내원 환자', num(t.pt) + '명', `신규 ${num(t.np)}명 · 어제 ${num(y.pt)}명`, y.pt ? deltaHTML(t.pt / y.pt - 1) : '')}
+    ${kpi('환자 1인당 평균 매출', krw(t.pt ? t.rev / t.pt : 0), `${mon(D.curK)} 평균 ${krw(D.mtd.pt ? D.mtd.rev / D.mtd.pt : 0)}`)}
+    ${kpi(`월간 인건비 (${mon(L.k)})`, krw(L.labor), `매출 대비 인건비율 <b>${pct(lr)}</b>`, badge(lrLv === 'good' ? '양호' : lrLv === 'warn' ? '관찰' : '주의', lrLv))}
+    ${kpi(`월간 영업이익 (${mon(L.k)})`, krw(L.op), `영업이익률 <b>${pct(L.margin)}</b> · 전월 ${pct(P.margin)}`, P.op > 0 ? deltaHTML(L.op / P.op - 1) : '')}
+    ${kpi('전월 대비 매출 성장률', `<span class="${L.mom >= 0 ? 'pos' : 'neg'}">${sgnPct(L.mom)}</span>`, `${mon(L.k)} ${krw(L.rev)} · ${mon(P.k)} ${krw(P.rev)}`)}
+    ${kpi('오늘 직원 출근', `${D.present} / ${D.sched}명`, `지각 ${c['지각']} · 결근 ${c['결근']} · 휴가 ${c['휴가']} · 휴무 ${c['휴무']}`, '', D.sched ? D.present / D.sched : 0)}
+  </div>
+  <div class="grid2">
+    ${panel('최근 30일 일별 매출', '<div class="chart" id="c-d30"></div>', `${last30[0].date} ~ ${S.baseDate} · 막대에 마우스를 올리면 금액·환자 수 표시`)}
+    ${panel(`${mon(D.curK)} 누적 매출 vs 목표 페이스`, '<div class="chart" id="c-pace"></div>', `월말 예상 ${krw(D.proj)} (일평균 × ${D.dim}일)`)}
+  </div>
+  <div class="grid2">
+    ${panel('월별 매출·총비용·영업이익', '<div class="chart" id="c-12"></div>', '최근 12개월 마감 기준')}
+    ${panel('경영 알림', `<ul class="alerts">${computeAlerts().map(a => `<li><span class="ic ${a.lv}" aria-hidden="true">${ICON[a.lv]}</span><div><b>${esc(a.t)}</b><span>${esc(a.d)}</span></div></li>`).join('')}</ul>`, '자동 진단: 인건비율 30/35%, 목표 페이스, 근태, 이익률, 마케팅 ROI')}
+  </div>
+  <div class="grid2">
+    ${panel('오늘 근무 현황', `<div class="chart" id="c-att"></div>
+      ${issues.length ? `<div class="tb-wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>이름</th><th>부서</th><th>상태</th><th class="num">출근</th></tr></thead><tbody>${issues.map(e => { const r = D.att[e.id].today; return `<tr><td>${esc(e.name)}</td><td>${esc(e.dept)}</td><td>${stBadge(r.s)}</td><td class="num">${hm(r.i)}</td></tr>`; }).join('')}</tbody></table></div>` : '<p class="sub-row">지각·결근·조퇴 직원이 없습니다.</p>'}`, `근무 예정 ${D.sched}명 중 ${D.present}명 출근 · 상태는 인사·근태 관리에서 수정`)}
+    ${panel('오늘 실적 입력', `<form class="form" id="f-today">
+        <label>오늘 매출 (원)<input name="rev" type="number" min="0" step="10000" value="${t.rev}"></label>
+        <label>오늘 내원 환자 (명)<input name="pt" type="number" min="0" value="${t.pt}"></label>
+        <label>신규 환자 (명)<input name="np" type="number" min="0" value="${t.np}"></label>
+        <label>${mon(D.curK)} 목표 매출 (원)<input name="target" type="number" min="0" step="1000000" value="${D.target}"></label>
+      </form><div class="form-actions"><button class="btn" id="b-today">저장하고 반영</button></div>`, '저장하면 카드·그래프·알림이 즉시 다시 계산됩니다')}
+  </div>`;
+  drawChart($('#c-d30'), {
+    type: 'bar', labels: last30.map(r => { const d = parseD(r.date); return `${d.getMonth() + 1}/${d.getDate()}`; }),
+    tipLabels: last30.map(r => `${fmtDate(parseD(r.date))} · 환자 ${num(r.pt)}명`),
+    series: [{ name: '매출', color: SC(0), values: last30.map(r => r.rev) }], labelW: 40,
+    colorFn: i => i === last30.length - 1 ? 'var(--navy-2)' : null,
+  });
+  let cum = 0;
+  const actual = [];
+  for (let d = 1; d <= D.dim; d++) { const r = D.byDate[`${D.curK}-${pad(d)}`]; if (d <= D.day && r) { cum += r.rev; actual.push(cum); } else actual.push(null); }
+  drawChart($('#c-pace'), {
+    type: 'line', labels: Array.from({ length: D.dim }, (_, i) => `${i + 1}일`), labelW: 40,
+    series: [{ name: '누적 실적', color: SC(0), values: actual }, { name: '목표 페이스', color: 'var(--text-2)', dash: true, values: Array.from({ length: D.dim }, (_, i) => D.target * (i + 1) / D.dim) }],
+  });
+  drawChart($('#c-12'), {
+    type: 'line', labels: D.v12.map(r => mon(r.k)), tipLabels: D.v12.map(r => monFull(r.k)),
+    series: [{ name: '매출', color: SC(0), values: D.v12.map(r => r.rev) }, { name: '총비용', color: SC(1), values: D.v12.map(r => r.total) }, { name: '영업이익', color: SC(2), values: D.v12.map(r => r.op) }],
+  });
+  drawChart($('#c-att'), { type: 'hbar', labels: STATUSES, colors: STATUSES.map(s => ST_COLOR[s]), series: [{ name: '인원', color: SC(0), values: STATUSES.map(s => c[s]) }], fmt: n => num(n) + '명' });
+  $('#b-today').onclick = () => {
+    const f = $('#f-today'), rec = D.byDate[S.baseDate];
+    if (!rec) return;
+    const r = S.daily.find(x => x.date === S.baseDate);
+    r.rev = toPos(fval(f, 'rev')); r.pt = toPos(fval(f, 'pt')); r.np = toPos(fval(f, 'np'));
+    S.curTarget = toPos(fval(f, 'target'));
+    commit('오늘 실적을 저장했습니다');
+  };
+}
+
+/* ========== 2. 직원 인사 및 근태 관리 ========== */
+function editEmp(id) {
+  const e = id ? S.emps.find(x => x.id === id) : null, isNew = !e;
+  const v = e || { name: '', dept: '간호부', rank: '사원', hire: S.baseDate, base: 2550000, pos: 0, other: 0, meal: 200000, ot: 0, night: 0, hol: 0, leavePrev: 0 };
+  const body = `<div class="form">
+    <label>이름 (가상 이름)<input name="name" value="${esc(v.name)}" required maxlength="20"></label>
+    <label>부서<select name="dept">${opts(DEPT_NAMES, v.dept)}</select></label>
+    <label>직급<select name="rank">${opts(RANKS, v.rank)}</select></label>
+    <label>입사일<input name="hire" type="date" value="${v.hire}" max="${S.baseDate}"></label>
+    <h4>급여 항목 (월)</h4>
+    <label>기본급 (원)<input name="base" type="number" min="0" step="10000" value="${v.base}"></label>
+    <label>직책수당 (원)<input name="pos" type="number" min="0" step="10000" value="${v.pos}"></label>
+    <label>식대 (원)<input name="meal" type="number" min="0" step="10000" value="${v.meal}"></label>
+    <label>기타수당·자격수당 (원)<input name="other" type="number" min="0" step="10000" value="${v.other}"></label>
+    <label>연장근로 (시간)<input name="ot" type="number" min="0" value="${v.ot}"></label>
+    <label>야간근로 (시간)<input name="night" type="number" min="0" value="${v.night}"></label>
+    <label>휴일근로 (시간)<input name="hol" type="number" min="0" value="${v.hol}"></label>
+    <label>이전 사용 연차 (일)<input name="leavePrev" type="number" min="0" value="${v.leavePrev}"></label>
+    <p class="sub-row full">실제 주민번호·연락처·주소 등 개인정보는 입력하지 마세요. 시제품은 브라우저에만 저장됩니다.</p>
+  </div>`;
+  const btns = [];
+  if (!isNew) btns.push({
+    label: '삭제', cls: 'danger left', fn: (f, b) => {
+      if (b.dataset.armed) {
+        S.emps = S.emps.filter(x => x.id !== id); delete S.att[id];
+        S.doctors = S.doctors.filter(x => x !== id);
+        commit(`${e.name} 직원을 삭제했습니다`); return true;
+      }
+      b.dataset.armed = 1; b.textContent = '한 번 더 누르면 삭제'; return false;
+    }
+  });
+  btns.push({ label: '취소', cls: 'ghost', fn: () => true });
+  btns.push({
+    label: isNew ? '추가' : '저장', fn: f => {
+      const name = fval(f, 'name').trim();
+      if (!name) { f.elements.name.focus(); toast('이름을 입력하세요'); return false; }
+      const data = { name, dept: fval(f, 'dept'), rank: fval(f, 'rank'), hire: fval(f, 'hire') || S.baseDate };
+      ['base', 'pos', 'meal', 'other', 'ot', 'night', 'hol', 'leavePrev'].forEach(k => data[k] = toPos(fval(f, k)));
+      data.owner = data.rank === '대표원장';
+      if (isNew) {
+        const id2 = 'E' + String(Math.max(0, ...S.emps.map(x => +x.id.slice(1))) + 1).padStart(3, '0');
+        const ne = { id: id2, ...data, doc: -1, off: [0, 6] };
+        S.emps.push(ne);
+        const recs = [], h = parseD(ne.hire);
+        for (let d = 1; d <= D.day; d++) {
+          const dt = new Date(D.base.getFullYear(), D.base.getMonth(), d);
+          if (dt < h) continue;
+          const [st, en] = shift(dt);
+          recs.push(scheduled(ne, dt) ? { d, s: '정상', i: st - 10, o: d === D.day ? null : en } : { d, s: '휴무', i: null, o: null });
+        }
+        S.att[id2] = recs;
+        commit(`${name} 직원을 추가했습니다`);
+      } else { Object.assign(e, data); commit('직원 정보를 저장했습니다'); }
+      return true;
+    }
+  });
+  modal(isNew ? '직원 추가' : `직원 정보 수정 · ${e.id}`, body, btns);
+}
+function setAtt(id, day, patch) {
+  const recs = S.att[id] || (S.att[id] = []);
+  let r = recs.find(x => x.d === day);
+  if (!r) { r = { d: day, s: '정상', i: null, o: null }; recs.push(r); recs.sort((a, b) => a.d - b.d); }
+  const dt = new Date(D.base.getFullYear(), D.base.getMonth(), day), [st, en] = shift(dt), isToday = day === D.day;
+  if ('s' in patch) {
+    r.s = patch.s;
+    if (['결근', '휴가', '휴무'].includes(r.s)) r.i = r.o = null;
+    else {
+      if (r.s === '지각') r.i = r.i != null && r.i > st ? r.i : st + 15; else if (r.i == null || r.i > st) r.i = st - 10;
+      if (r.s === '조퇴') r.o = r.o != null && r.o < en ? r.o : en - 120; else if (!isToday && (r.o == null || r.o < en)) r.o = en;
+    }
+  }
+  if ('i' in patch) r.i = patch.i;
+  if ('o' in patch) r.o = patch.o;
+}
+function pageHR(v) {
+  const c = D.cnt, n = S.emps.length, avgH = sum(S.emps, e => D.att[e.id].m.min) / 60 / Math.max(1, n);
+  if (!UI.attDay || UI.attDay > D.day) UI.attDay = D.day;
+  v.innerHTML = `
+  <p class="page-desc">직원 정보는 표의 행을 클릭해 수정합니다. 근태 상태를 바꾸면 대시보드 출근 현황과 연차 사용 일수가 함께 갱신됩니다.</p>
+  <div class="kpis">
+    ${kpi('전체 직원', num(n) + '명', `${DEPT_NAMES.length}개 부서 · 의료진 ${S.emps.filter(e => e.dept === '의료진').length}명`)}
+    ${kpi('오늘 근무 예정', num(D.sched) + '명', `휴무 ${c['휴무']}명 (연중무휴 교대 근무)`)}
+    ${kpi('오늘 출근', num(D.present) + '명', `출근율 ${pct(D.sched ? D.present / D.sched : 0)}`, '', D.sched ? D.present / D.sched : 0)}
+    ${kpi('오늘 지각·조퇴', `${c['지각']} · ${c['조퇴']}명`, '지각 기준: 근무 시작 시각 이후 출근')}
+    ${kpi('오늘 결근·휴가', `${c['결근']} · ${c['휴가']}명`, '휴가는 연차 사용으로 집계')}
+    ${kpi(`${mon(D.curK)} 1인 평균 근무`, avgH.toFixed(1) + '시간', `${D.day}일 경과 · 휴게 1시간 제외`)}
+  </div>
+  <div class="grid2">
+    ${panel('부서별 인원과 오늘 근무 인원', '<div class="chart" id="c-dept"></div>')}
+    ${panel(`${mon(D.curK)} 일별 근태 이상`, '<div class="chart" id="c-anom"></div>', '지각·조퇴·결근 인원 (누적 막대)')}
+  </div>
+  <section class="panel">
+    <div class="tabs" role="tablist">${[['list', '직원 목록'], ['daily', '일별 출퇴근 기록'], ['month', '월간 근무 집계'], ['leave', '연차 현황']].map(([k, l]) => `<button role="tab" data-t="${k}" class="${UI.hrTab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <div id="hr-body"></div>
+  </section>`;
+  const deptAll = DEPT_NAMES.map(d => S.emps.filter(e => e.dept === d).length);
+  const deptNow = DEPT_NAMES.map(d => S.emps.filter(e => e.dept === d && ['정상', '지각', '조퇴'].includes(D.att[e.id].today?.s)).length);
+  drawChart($('#c-dept'), { type: 'bar', labels: DEPT_NAMES, series: [{ name: '전체 인원', color: SC(0), values: deptAll }, { name: '오늘 출근', color: SC(2), values: deptNow }], fmt: n => num(n) + '명', axis: n => num(n), labelW: 64, left: 36 });
+  const days = Array.from({ length: D.day }, (_, i) => i + 1);
+  const cntDay = s => days.map(d => S.emps.filter(e => (S.att[e.id] || []).find(r => r.d === d)?.s === s).length);
+  drawChart($('#c-anom'), { type: 'stacked', labels: days.map(d => d + '일'), series: [{ name: '지각', color: ST_COLOR['지각'], values: cntDay('지각') }, { name: '조퇴', color: ST_COLOR['조퇴'], values: cntDay('조퇴') }, { name: '결근', color: ST_COLOR['결근'], values: cntDay('결근') }], fmt: n => num(n) + '명', axis: n => num(n), left: 36, labelW: 40 });
+  $$('.tabs button', v).forEach(b => b.onclick = () => { UI.hrTab = b.dataset.t; $$('.tabs button', v).forEach(x => x.classList.toggle('on', x === b)); hrTab(); });
+  hrTab();
+}
+function hrTab() {
+  const el = $('#hr-body'), deptF = { key: 'dept', label: '부서', options: DEPT_NAMES };
+  if (UI.hrTab === 'list') {
+    table(el, {
+      id: 'emp', rows: S.emps, rowId: e => e.id, onRow: editEmp, csv: '직원목록', ph: '이름·사번 검색', searchText: e => e.id + ' ' + e.name,
+      filters: [deptF, { key: 'rank', label: '직급', options: RANKS }, { key: 'st', label: '오늘 상태', options: STATUSES, get: e => D.att[e.id].today?.s || '' }],
+      tools: '<button class="btn" id="b-add" type="button">+ 직원 추가</button>',
+      columns: [
+        { key: 'id', label: '사번' }, { key: 'name', label: '이름' }, { key: 'dept', label: '부서' }, { key: 'rank', label: '직급' },
+        { key: 'hire', label: '입사일' }, { key: 'ten', label: '근속', get: e => tenure(e.hire), sv: e => -parseD(e.hire).getTime() },
+        { key: 'st', label: '오늘 상태', get: e => D.att[e.id].today?.s || '', html: e => stBadge(D.att[e.id].today?.s) },
+        { key: 'in', label: '오늘 출근', num: true, get: e => hm(D.att[e.id].today?.i ?? null) },
+      ],
+    });
+    $('#b-add').onclick = () => editEmp(null);
+  } else if (UI.hrTab === 'daily') {
+    const day = UI.attDay, dt = new Date(D.base.getFullYear(), D.base.getMonth(), day), [st, en] = shift(dt);
+    const rows = S.emps.map(e => ({ e, r: (S.att[e.id] || []).find(x => x.d === day) }));
+    table(el, {
+      id: 'att', rows, rowId: x => x.e.id, onRow: editEmp, csv: `일별근태_${day}일`, ph: '이름 검색', searchText: x => x.e.name,
+      filters: [{ ...deptF, get: x => x.e.dept }, { key: 'st', label: '상태', options: STATUSES, get: x => x.r?.s || '' }],
+      tools: `<select id="att-day" aria-label="날짜 선택">${opts(Array.from({ length: D.day }, (_, i) => { const d = new Date(D.base.getFullYear(), D.base.getMonth(), i + 1); return [i + 1, `${d.getMonth() + 1}월 ${i + 1}일 (${WD[d.getDay()]})`]; }).reverse(), day)}</select><span class="sub-row">근무시간 ${hm(st)}~${hm(en)}</span>`,
+      columns: [
+        { key: 'name', label: '이름', get: x => x.e.name }, { key: 'dept', label: '부서', get: x => x.e.dept }, { key: 'rank', label: '직급', get: x => x.e.rank },
+        { key: 's', label: '상태', get: x => x.r?.s || '', html: x => x.r ? `<select class="att-s" data-id="${x.e.id}" aria-label="${esc(x.e.name)} 상태">${opts(STATUSES, x.r.s)}</select>` : '<span class="sub-row">입사 전</span>' },
+        { key: 'i', label: '출근', get: x => hm(x.r?.i ?? null), html: x => x.r ? `<input type="time" class="att-t" data-id="${x.e.id}" data-f="i" value="${x.r.i != null ? hm(x.r.i) : ''}" aria-label="출근 시각">` : '' },
+        { key: 'o', label: '퇴근', get: x => x.r && x.r.i != null && x.r.o == null && day === D.day ? '근무 중' : hm(x.r?.o ?? null), html: x => x.r ? `<input type="time" class="att-t" data-id="${x.e.id}" data-f="o" value="${x.r.o != null ? hm(x.r.o) : ''}" aria-label="퇴근 시각">${x.r.i != null && x.r.o == null && day === D.day ? ' <span class="sub-row">근무 중</span>' : ''}` : '' },
+        { key: 'h', label: '근무시간', num: true, get: x => x.r ? +(workMin(x.r) / 60).toFixed(1) : 0, fmt: h => h ? h.toFixed(1) + 'h' : '—' },
+      ],
+      onChange: t => {
+        if (t.matches('.att-s')) { setAtt(t.dataset.id, day, { s: t.value }); commit('근태 상태를 변경했습니다'); }
+        else if (t.matches('.att-t')) { setAtt(t.dataset.id, day, { [t.dataset.f]: parseHM(t.value) }); commit('출퇴근 시각을 변경했습니다'); }
+      },
+    });
+    $('#att-day').onchange = e => { UI.attDay = +e.target.value; hrTab(); };
+  } else if (UI.hrTab === 'month') {
+    table(el, {
+      id: 'attm', rows: S.emps, rowId: e => e.id, onRow: editEmp, csv: `월간근무집계_${D.curK}`, ph: '이름 검색', searchText: e => e.name, filters: [deptF], totals: true,
+      columns: [
+        { key: 'name', label: '이름' }, { key: 'dept', label: '부서' }, { key: 'rank', label: '직급' },
+        { key: 'work', label: '출근일', num: true, get: e => D.att[e.id].m.work, total: true },
+        { key: 'late', label: '지각', num: true, get: e => D.att[e.id].m.late, total: true },
+        { key: 'early', label: '조퇴', num: true, get: e => D.att[e.id].m.early, total: true },
+        { key: 'abs', label: '결근', num: true, get: e => D.att[e.id].m.abs, total: true },
+        { key: 'vac', label: '휴가', num: true, get: e => D.att[e.id].m.vac, total: true },
+        { key: 'hrs', label: '총 근무시간', num: true, get: e => +(D.att[e.id].m.min / 60).toFixed(1), fmt: h => h.toFixed(1) + 'h', total: true },
+        { key: 'avg', label: '일평균', num: true, get: e => { const m = D.att[e.id].m; return m.work ? +(m.min / 60 / m.work).toFixed(1) : 0; }, fmt: h => h.toFixed(1) + 'h' },
+      ],
+    });
+  } else {
+    table(el, {
+      id: 'leave', rows: S.emps, rowId: e => e.id, onRow: editEmp, csv: '연차현황', ph: '이름 검색', searchText: e => e.name, filters: [deptF], totals: true,
+      columns: [
+        { key: 'name', label: '이름' }, { key: 'dept', label: '부서' }, { key: 'hire', label: '입사일' }, { key: 'ten', label: '근속', get: e => tenure(e.hire), sv: e => -parseD(e.hire).getTime() },
+        { key: 'g', label: '발생', num: true, get: e => D.att[e.id].leave.g, fmt: n => n + '일', total: true },
+        { key: 'u', label: '사용', num: true, get: e => D.att[e.id].leave.used, fmt: n => n + '일', total: true },
+        { key: 'r', label: '잔여', num: true, get: e => D.att[e.id].leave.rem, fmt: n => n + '일', total: true },
+        { key: 'rate', label: '사용률', num: true, get: e => D.att[e.id].leave.rate, fmt: x => pct(x, 0) },
+        { key: 'flag', label: '상태', get: e => { const l = D.att[e.id].leave; return l.rem < 0 ? '초과 사용' : l.rate < .3 && l.g >= 10 ? '사용 촉진 대상' : '정상'; }, html: e => { const l = D.att[e.id].leave; return l.rem < 0 ? badge('초과 사용', 'crit') : l.rate < .3 && l.g >= 10 ? badge('사용 촉진 대상', 'warn') : badge('정상', 'good'); } },
+      ],
+    });
+  }
+}
+
+/* ========== 3. 급여 관리 ========== */
+function pagePayroll(v) {
+  const L = D.last, P = D.pay.filter(p => !p.e.owner), pf = S.payFactor.slice(12);
+  const y = +L.k.slice(0, 4), mw = minWage(y), mwN = MIN_WAGE.find(r => r[0] === y + 1)?.[1];
+  const under = P.filter(p => p.hourly < mw), underN = mwN ? P.filter(p => p.hourly < mwN) : [];
+  v.innerHTML = `
+  <div class="notice"><span class="ic warn" aria-hidden="true">!</span><div><b>예시 데이터·예시 계산입니다. 실제 세금 및 4대보험 계산은 추후 별도 검증이 필요합니다.</b><br>
+  급여는 임의의 예시 데이터이며, 공제는 단순화한 요율(국민연금 4.75%·상한 637만원, 건강보험 3.595%, 장기요양 건강보험료의 13.14%, 고용보험 0.9%, 소득세는 간이세액표가 아닌 단순 누진 예시)로 계산했습니다.
+  시급은 기본급 ÷ 209시간(주 40시간 기준 월 소정근로시간), 1.5배 시급은 연장·휴일근로에 적용되는 금액이며 야간은 0.5배 가산으로 단순화했습니다. 세전 금액 = 모든 지급 항목의 합, 세후 금액 = 세전 금액 − 공제계입니다. 최저임금 점검은 기본급 ÷ 209시간으로 단순 비교하며, 실제로는 매월 지급되는 정기상여금·복리후생비 등 산입범위를 반영해 판단해야 합니다. 실제 적용 전 노무사·세무사 검증이 필요합니다. 대표원장(사업주)은 급여 대상에서 제외합니다.</div></div>
+  <div class="kpis">
+    ${kpi('급여 기준월', monFull(L.k), `지급 대상 ${P.length}명`)}
+    ${kpi('세전 금액 합계', krw(D.payGross), `1인 평균 ${krw(D.payGross / Math.max(1, P.length))}`)}
+    ${kpi('공제 총액', krw(D.payDed), `4대보험·소득세 (근로자 부담)`)}
+    ${kpi('세후 금액 합계', krw(D.payNet), `1인 평균 ${krw(D.payNet / Math.max(1, P.length))}`)}
+    ${kpi('사업주 부담 포함 인건비', krw(D.laborCost), `사업주 4대보험 등 ${krw(D.payEr)}`)}
+    ${kpi('매출 대비 인건비율', pct(L.laborRatio), `${mon(L.k)} 매출 ${krw(L.rev)}`)}
+    ${kpi(`${y}년 최저시급`, won(mw), `주 40시간 정규직 월 최저 <b>${won(mw * MIN_HOURS)}</b>`)}
+    ${kpi('최저임금 점검', under.length ? `<span class="neg">미달 ${under.length}명</span>` : '<span class="pos">전원 충족</span>', mwN ? `${y + 1}년 (${won(mwN)}) 기준 미달 예정 <b>${underN.length}명</b>` : '기본급 ÷ 209시간 기준')}
+  </div>
+  <div class="grid2">
+    ${panel('월별 급여 변동 추이', '<div class="chart" id="c-pay12"></div>', '세전 금액·세후 금액 (최근 12개월)')}
+    ${panel('부서별 인건비 합계', '<div class="chart" id="c-paydept"></div>', '사업주 부담 포함')}
+  </div>
+  ${panel('연도별 최저임금 기준', '<div id="t-mw"></div>', '주 40시간 정규직 기준 · 월 209시간 = (주 40시간 + 주휴 8시간) × 월 평균 4.345주')}
+  ${panel(`직원별 급여 명세 (${monFull(L.k)})`, '<div id="t-pay"></div>', '행을 클릭하면 기본급·수당·근로시간을 수정할 수 있습니다')}
+  `;
+  drawChart($('#c-pay12'), {
+    type: 'line', labels: D.v12.map(r => mon(r.k)), tipLabels: D.v12.map(r => monFull(r.k)),
+    series: [{ name: '세전 금액', color: SC(0), values: pf.map(f => D.payGross * f) }, { name: '세후 금액', color: SC(2), values: pf.map(f => D.payNet * f) }],
+  });
+  const dc = DEPT_NAMES.map(d => sum(D.pay.filter(p => p.e.dept === d), 'cost'));
+  drawChart($('#c-paydept'), { type: 'hbar', labels: DEPT_NAMES, series: [{ name: '인건비', color: SC(0), values: dc }] });
+  const m = k => ({ key: k[0], label: k[1], num: true, fmt: num, total: true });
+  table($('#t-pay'), {
+    id: 'pay', rows: D.pay, rowId: p => p.e.id, onRow: editEmp, csv: `급여명세_${L.k}`, ph: '이름·사번 검색', searchText: p => p.e.id + ' ' + p.e.name, totals: true,
+    filters: [{ key: 'dept', label: '부서', options: DEPT_NAMES, get: p => p.e.dept }, { key: 'rank', label: '직급', options: RANKS, get: p => p.e.rank }],
+    columns: [
+      { key: 'id', label: '사번', get: p => p.e.id }, { key: 'name', label: '이름', get: p => p.e.name }, { key: 'dept', label: '부서', get: p => p.e.dept }, { key: 'rank', label: '직급', get: p => p.e.rank },
+      { key: 'hourly', label: '시급', num: true, fmt: x => x ? won(x) : '—' },
+      { key: 'hourly15', label: '1.5배 시급', num: true, fmt: x => x ? won(x) : '—' },
+      { key: 'mwr', label: `${y}년 최저시급 대비`, num: true, get: p => p.hourly ? p.hourly / mw : 0, csv: p => p.hourly ? pct(p.hourly / mw, 0) : '',
+        html: p => !p.hourly ? '—' : p.hourly < mw ? badge('미달 ' + pct(p.hourly / mw, 0), 'crit') : p.hourly < mw * 1.05 ? badge('근접 ' + pct(p.hourly / mw, 0), 'warn') : pct(p.hourly / mw, 0) },
+      ...[['base', '기본급'], ['pos', '직책수당'], ['otPay', '연장수당'], ['nightPay', '야간수당'], ['holPay', '휴일수당'], ['meal', '식대'], ['other', '기타수당'], ['gross', '세전 금액'],
+      ['pension', '국민연금'], ['health', '건강보험'], ['ltc', '장기요양'], ['empIns', '고용보험'], ['tax', '소득세'], ['local', '지방소득세'], ['ded', '공제계'], ['net', '세후 금액'], ['cost', '사업주부담 포함']].map(m),
+    ],
+  });
+  table($('#t-mw'), {
+    id: 'mw', rows: MIN_WAGE.map(([yr, w], j) => ({ yr, w, inc: j ? w / MIN_WAGE[j - 1][1] - 1 : null })), csv: '연도별최저임금', search: false, sort: 'yr', sortDir: -1,
+    columns: [
+      { key: 'yr', label: '연도', fmt: x => x + '년' },
+      { key: 'st', label: '구분', get: r => r.yr === y ? '적용 중' : r.yr > y ? '시행 예정' : '과거', html: r => r.yr === y ? badge('적용 중', 'good') : r.yr > y ? badge('시행 예정', 'info') : '<span class="sub-row">과거</span>' },
+      { key: 'w', label: '최저시급', num: true, fmt: won },
+      { key: 'inc', label: '인상률', num: true, fmt: x => x == null ? '—' : sgnPct(x) },
+      { key: 'w15', label: '1.5배 시급 (연장·휴일)', num: true, get: r => Math.round(r.w * 1.5), fmt: won },
+      { key: 'day', label: '일급 (8시간)', num: true, get: r => r.w * 8, fmt: won },
+      { key: 'month', label: '월 최저 (209시간)', num: true, get: r => r.w * MIN_HOURS, fmt: won },
+      { key: 'yearly', label: '연 최저 (12개월)', num: true, get: r => r.w * MIN_HOURS * 12, fmt: won },
+    ],
+  });
+}
+
+/* ========== 4. 매출 및 재무 관리 ========== */
+function pageFinance(v) {
+  const L = D.last, sel = D.fin[UI.finMonth];
+  v.innerHTML = `
+  <p class="page-desc">월 매출·비용은 아래 ‘월 데이터 수정’에서 바꿀 수 있습니다. 인건비는 급여 관리, 광고비는 마케팅 관리 데이터에서 자동으로 가져옵니다.</p>
+  <div class="kpis">
+    ${kpi(`${mon(L.k)} 매출`, krw(L.rev), `전월 대비 ${sgnPct(L.mom)} · 전년 동월 대비 ${sgnPct(L.yoy)}`, deltaHTML(L.mom))}
+    ${kpi(`${mon(L.k)} 영업이익`, krw(L.op), `총비용 ${krw(L.total)}`)}
+    ${kpi('영업이익률', pct(L.margin), `전월 ${pct(D.prev.margin)} (${pp(L.margin - D.prev.margin)})`)}
+    ${kpi('매출 대비 인건비율', pct(L.laborRatio), `인건비 ${krw(L.labor)}`)}
+    ${kpi(`${mon(L.k)} 목표 대비 실적`, pct(L.rev / L.target), `목표 ${krw(L.target)}`, '', L.rev / L.target)}
+    ${kpi('최근 12개월 누적 매출', krw(sum(D.v12, 'rev')), `누적 영업이익 ${krw(sum(D.v12, 'op'))}`)}
+  </div>
+  ${panel('매출 추이', '<div class="chart" id="c-rev"></div>', '', `<div class="seg" role="group" aria-label="기간">${[['daily', '일별'], ['weekly', '주별'], ['monthly', '월별']].map(([k, l]) => `<button data-p="${k}" class="${UI.finPeriod === k ? 'on' : ''}">${l}</button>`).join('')}</div>`)}
+  <div class="grid2">
+    ${panel('목표 매출 대비 실적', '<div class="chart" id="c-tgt"></div>', '최근 12개월')}
+    ${panel('매출·총비용·영업이익', '<div class="chart" id="c-pl"></div>', '최근 12개월')}
+  </div>
+  <div class="grid2">
+    ${panel('의료진별 매출', '<div class="chart" id="c-doc"></div>', monFull(sel.k), `<select id="fin-m" aria-label="월 선택">${monthOpts(UI.finMonth)}</select>`)}
+    ${panel('진료 유형별 매출', '<div class="chart" id="c-type"></div>', monFull(sel.k))}
+  </div>
+  ${panel('비용 구성 추이', '<div class="chart" id="c-cost"></div>', '인건비·임대료·재료비·광고비 등 항목별 (누적 막대)')}
+  ${panel('월별 손익계산서', '<div id="t-pl"></div>', '최근 12개월 · 전월 및 전년 동월 대비 매출 증감률 포함')}
+  <div class="grid2">
+    ${panel('월 데이터 수정', '<div id="fin-edit"></div>', '저장하면 손익·대시보드가 즉시 다시 계산됩니다')}
+    ${panel('이익 시뮬레이터', '<div id="sim"></div>', '매출과 비용이 바뀔 때 예상 영업이익을 계산합니다 (저장되지 않음)')}
+  </div>`;
+  drawRevChart();
+  $$('.seg button', v).forEach(b => b.onclick = () => { UI.finPeriod = b.dataset.p; $$('.seg button', v).forEach(x => x.classList.toggle('on', x === b)); drawRevChart(); });
+  drawChart($('#c-tgt'), { type: 'bar', labels: D.v12.map(r => mon(r.k)), tipLabels: D.v12.map(r => `${monFull(r.k)} · 달성률 ${pct(r.rev / r.target)}`), series: [{ name: '목표', color: SC(6), values: D.v12.map(r => r.target) }, { name: '실적', color: SC(0), values: D.v12.map(r => r.rev) }] });
+  drawChart($('#c-pl'), { type: 'line', labels: D.v12.map(r => mon(r.k)), tipLabels: D.v12.map(r => monFull(r.k)), series: [{ name: '매출', color: SC(0), values: D.v12.map(r => r.rev) }, { name: '총비용', color: SC(1), values: D.v12.map(r => r.total) }, { name: '영업이익', color: SC(2), values: D.v12.map(r => r.op) }] });
+  const shares = sel.f.doc, ss = shares.reduce((a, b) => a + b, 0);
+  const docNames = S.doctors.map((id, j) => { const e = S.emps.find(x => x.id === id); return e ? `${e.name} ${e.rank}` : `의료진 ${j + 1}`; });
+  drawChart($('#c-doc'), { type: 'hbar', labels: docNames, series: [{ name: '매출', color: SC(0), values: shares.slice(0, docNames.length).map(s => sel.rev * s / ss) }] });
+  drawChart($('#c-type'), { type: 'hbar', labels: TYPES.map(t => t[1]), series: [{ name: '매출', color: SC(0), values: TYPES.map(([k]) => sel.f.type[k]) }] });
+  drawChart($('#c-cost'), { type: 'stacked', labels: D.v12.map(r => mon(r.k)), tipLabels: D.v12.map(r => monFull(r.k)), height: 280, series: COSTS.map(([k, n], i) => ({ name: n, color: SC(i), values: D.v12.map(r => r.costs[k]) })) });
+  $('#fin-m').onchange = e => { UI.finMonth = +e.target.value; render(true); };
+  const money = (k, l) => ({ key: k, label: l, num: true, get: r => r.costs[k], fmt: num, total: true });
+  table($('#t-pl'), {
+    id: 'pl', rows: D.v12, rowId: r => r.i, csv: '월별손익계산서', search: false, sort: 'k', sortDir: -1, totals: true, totalLabel: '12개월 합계',
+    onRow: id => { UI.finMonth = +id; render(true); $('#fin-edit')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); },
+    columns: [
+      { key: 'k', label: '월', fmt: k => monFull(k) },
+      { key: 'rev', label: '매출', num: true, fmt: num, total: true },
+      ...COSTS.map(([k, n]) => money(k, n)),
+      { key: 'total', label: '총비용', num: true, fmt: num, total: true },
+      { key: 'op', label: '영업이익', num: true, fmt: num, total: true },
+      { key: 'margin', label: '이익률', num: true, fmt: x => pct(x), total: rs => pct(sum(rs, 'op') / sum(rs, 'rev')) },
+      { key: 'laborRatio', label: '인건비율', num: true, fmt: x => pct(x), total: rs => pct(sum(rs, 'labor') / sum(rs, 'rev')) },
+      { key: 'mom', label: '전월비', num: true, fmt: x => sgnPct(x) },
+      { key: 'yoy', label: '전년동월비', num: true, fmt: x => sgnPct(x) },
+      { key: 'ach', label: '목표달성', num: true, get: r => r.rev / r.target, fmt: x => pct(x) },
+    ],
+  });
+  finEdit(); simInit();
+}
+function drawRevChart() {
+  const p = UI.finPeriod;
+  let labels, tips, vals;
+  if (p === 'daily') {
+    const d = S.daily.slice(-31);
+    labels = d.map(r => { const x = parseD(r.date); return `${x.getMonth() + 1}/${x.getDate()}`; });
+    tips = d.map(r => `${fmtDate(parseD(r.date))} · 환자 ${num(r.pt)}명`); vals = d.map(r => r.rev);
+  } else if (p === 'weekly') {
+    labels = []; tips = []; vals = [];
+    for (let k = 11; k >= 0; k--) {
+      const end = addDays(D.base, -7 * k), st = addDays(end, -6);
+      const rs = S.daily.filter(r => r.date >= ymd(st) && r.date <= ymd(end));
+      labels.push(`${st.getMonth() + 1}/${st.getDate()}~`); tips.push(`${ymd(st)} ~ ${ymd(end)}`); vals.push(sum(rs, 'rev'));
+    }
+  } else { labels = D.v12.map(r => mon(r.k)); tips = D.v12.map(r => `${monFull(r.k)} · 전월비 ${sgnPct(r.mom)} · 전년비 ${sgnPct(r.yoy)}`); vals = D.v12.map(r => r.rev); }
+  drawChart($('#c-rev'), { type: 'bar', labels, tipLabels: tips, series: [{ name: '매출', color: SC(0), values: vals }], labelW: p === 'weekly' ? 52 : 40 });
+}
+function finEdit() {
+  const r = D.fin[UI.finMonth], f = r.f, el = $('#fin-edit');
+  el.innerHTML = `<form class="form" id="f-fin">
+    <label class="full">수정할 월<select name="m">${monthOpts(UI.finMonth)}</select></label>
+    <h4>진료 유형별 매출 (원)</h4>
+    ${TYPES.map(([k, n]) => `<label>${n}<input name="t_${k}" type="number" min="0" step="100000" value="${f.type[k]}"></label>`).join('')}
+    <h4>목표·환자</h4>
+    <label>목표 매출 (원)<input name="target" type="number" min="0" step="1000000" value="${f.target}"></label>
+    <label>월 내원 환자 (명)<input name="pt" type="number" min="0" value="${f.pt}"></label>
+    <h4>비용 (원) — 인건비·광고비는 자동 연동</h4>
+    <label>임대료<input name="rent" type="number" min="0" step="100000" value="${f.rent}"></label>
+    <label>재료·약품비<input name="material" type="number" min="0" step="100000" value="${f.material}"></label>
+    <label>장비 리스·감가<input name="equip" type="number" min="0" step="100000" value="${f.equip}"></label>
+    <label>관리비·공과금<input name="util" type="number" min="0" step="100000" value="${f.util}"></label>
+    <label>기타 운영비<input name="other" type="number" min="0" step="100000" value="${f.other}"></label>
+  </form><div class="form-actions"><button class="btn" id="b-fin">저장하고 반영</button></div>`;
+  const form = $('#f-fin');
+  form.elements.m.onchange = e => { UI.finMonth = +e.target.value; finEdit(); };
+  $('#b-fin').onclick = () => {
+    const oldRev = sumType(f.type), oldPt = f.pt;
+    TYPES.forEach(([k]) => f.type[k] = toPos(fval(form, 't_' + k)));
+    ['target', 'pt', 'rent', 'material', 'equip', 'util', 'other'].forEach(k => f[k] = toPos(fval(form, k)));
+    // 해당 월의 일별 매출도 같은 비율로 조정해 일별·주별 그래프와 맞춤
+    const newRev = sumType(f.type), k = S.months[UI.finMonth];
+    S.daily.forEach(d => { if (d.date.startsWith(k)) { if (oldRev) d.rev = Math.round(d.rev * newRev / oldRev / 1000) * 1000; if (oldPt) d.pt = Math.round(d.pt * f.pt / oldPt); } });
+    commit(`${monFull(k)} 데이터를 저장했습니다`);
+  };
+}
+function simInit() {
+  if (!UI.sim || !D.fin[UI.sim.m]) UI.sim = simDefaults(23);
+  const s = UI.sim, el = $('#sim');
+  const rg = (k, label, min, max, step, unit) => `<label class="rng"><span class="row"><span>${label}</span><output id="o-${k}"></output></span><input type="range" name="${k}" min="${min}" max="${max}" step="${step}" value="${s[k]}" data-unit="${unit}"></label>`;
+  el.innerHTML = `<div class="sim"><form id="f-sim">
+      <label class="rng"><span>기준 월</span><select name="m">${monthOpts(s.m)}</select></label>
+      ${rg('rev', '매출 변화', -30, 30, 1, '%')}
+      ${rg('labor', '인건비 변화', -20, 30, 1, '%')}
+      ${rg('mat', '재료·약품비율 (매출 대비)', 5, 20, 0.5, '%r')}
+      ${rg('ad', '광고비 변화', -50, 100, 5, '%')}
+      <label class="rng"><span>월 임대료 (원)</span><input type="number" name="rent" min="0" step="1000000" value="${s.rent}"></label>
+      <label class="rng"><span>추가 고정비 (원, 예: 신규 장비 리스)</span><input type="number" name="fixed" step="1000000" value="${s.fixed}"></label>
+      <button type="button" class="btn ghost" id="b-sim-reset">기준값으로 초기화</button>
+    </form><div><div class="mini" id="sim-out"></div><div class="chart" id="c-sim" style="margin-top:14px"></div></div></div>`;
+  const form = $('#f-sim');
+  form.addEventListener('input', e => {
+    if (e.target.name === 'm') return;
+    ['rev', 'labor', 'mat', 'ad', 'rent', 'fixed'].forEach(k => s[k] = k === 'fixed' ? toInt(form.elements[k].value) : +form.elements[k].value || 0);
+    simRun();
+  });
+  form.elements.m.onchange = e => { UI.sim = simDefaults(+e.target.value); simInit(); };
+  $('#b-sim-reset').onclick = () => { UI.sim = simDefaults(s.m); simInit(); };
+  simRun();
+}
+function simDefaults(m) {
+  const b = D.fin[m];
+  return { m, rev: 0, labor: 0, mat: Math.round(b.costs.material / b.rev * 200) / 2, ad: 0, rent: b.costs.rent, fixed: 0 };
+}
+function simRun() {
+  const s = UI.sim, b = D.fin[s.m];
+  ['rev', 'labor', 'mat', 'ad'].forEach(k => { const o = $('#o-' + k); if (o) o.textContent = k === 'mat' ? s[k].toFixed(1) + '%' : (s[k] > 0 ? '+' : '') + s[k] + '%'; });
+  const rev = b.rev * (1 + s.rev / 100), labor = b.labor * (1 + s.labor / 100), mat = rev * s.mat / 100, ad = b.ad * (1 + s.ad / 100);
+  const fixed = labor + s.rent + ad + b.costs.equip + b.costs.util + b.costs.other + s.fixed;
+  const total = fixed + mat, op = rev - total, bep = s.mat < 100 ? fixed / (1 - s.mat / 100) : 0;
+  const dOp = op - b.op;
+  $('#sim-out').innerHTML = [
+    ['예상 매출', krw(rev), deltaHTML(rev / b.rev - 1)],
+    ['예상 총비용', krw(total), deltaHTML(total / b.total - 1, false)],
+    ['예상 영업이익', krw(op), `<em class="${dOp >= 0 ? 'pos' : 'neg'}">기준 대비 ${dOp >= 0 ? '+' : ''}${krw(dOp)}</em>`],
+    ['예상 영업이익률', pct(rev ? op / rev : 0), `<em>기준 ${pct(b.margin)}</em>`],
+    ['예상 인건비율', pct(rev ? labor / rev : 0), `<em>기준 ${pct(b.laborRatio)}</em>`],
+    ['손익분기 매출', krw(bep), `<em>고정비 ÷ (1 − 재료비율)</em>`],
+  ].map(([l, v, d]) => `<div><span>${l}</span><b>${v}</b>${d}</div>`).join('');
+  drawChart($('#c-sim'), { type: 'bar', labels: ['매출', '총비용', '영업이익'], height: 200, series: [{ name: `기준 (${mon(b.k)})`, color: SC(6), values: [b.rev, b.total, b.op] }, { name: '시뮬레이션', color: SC(0), values: [rev, total, op] }], labelW: 60 });
+}
+
+/* ========== 5. 마케팅 관리 ========== */
+function pageMarketing(v) {
+  const i = UI.mktMonth, M = D.mkt[i], P = D.mkt[i - 1], raw = S.mkt[i], v12 = D.mkt.slice(12);
+  const chRows = CH.map(([k, n]) => ({ k, n, ...M.ch[k] }));
+  v.innerHTML = `
+  <p class="page-desc">채널별 비용·문의·예약·신규 환자 수는 표에서 바로 수정할 수 있습니다. 광고비 합계는 손익계산서 광고비로 자동 반영됩니다.</p>
+  <div class="panel-act" style="margin-bottom:14px"><label class="sub-row" for="mkt-m">조회 월</label><select id="mkt-m">${monthOpts(i)}</select></div>
+  <div class="kpis">
+    ${kpi('총 마케팅 비용', krw(M.cost), `전월 ${krw(P.cost)}`, deltaHTML(M.cost / P.cost - 1, false))}
+    ${kpi('문의 → 예약', `${num(M.inq)} → ${num(M.book)}건`, `예약 전환율 <b>${pct(M.conv)}</b>`)}
+    ${kpi('신규 환자 (유료 채널)', num(M.newp) + '명', `전체 신규 ${num(M.allNew)}명 (소개·워크인 포함)`, deltaHTML(M.newp / P.newp - 1))}
+    ${kpi('환자 획득 비용 (CAC)', krw(M.cac), `전월 ${krw(P.cac)}`, deltaHTML(M.cac / P.cac - 1, false))}
+    ${kpi('마케팅 ROI', pct(M.roi, 0), `귀속 매출 ${krw(M.rev)} · 전월 ${pct(P.roi, 0)}`, `<span class="delta ${M.roi >= P.roi ? 'up' : 'down'}">${pp(M.roi - P.roi)}</span>`)}
+    ${kpi('광고비 / 매출', pct(M.cost / D.fin[i].rev), `${mon(M.k)} 매출 ${krw(D.fin[i].rev)}`)}
+  </div>
+  <div class="grid2">
+    ${panel('채널별 마케팅 비용', '<div class="chart" id="c-mcost"></div>', monFull(M.k))}
+    ${panel('채널별 문의·예약 전환', '<div class="chart" id="c-mconv"></div>', monFull(M.k))}
+  </div>
+  <div class="grid3">
+    ${panel('신규 환자 유입 경로', '<div class="chart" id="c-src"></div>', '유료 채널 + 비유료 경로')}
+    ${panel('채널별 CAC', '<div class="chart" id="c-cac"></div>', '비용 ÷ 신규 환자 (낮을수록 효율적)')}
+    ${panel('채널별 ROI', '<div class="chart" id="c-roi"></div>', '(귀속 매출 − 비용) ÷ 비용')}
+  </div>
+  ${panel(`채널 성과 입력 · ${monFull(M.k)}`, '<div id="t-ch"></div>', '숫자를 바꾸고 칸을 벗어나면 즉시 저장·반영됩니다. 문자 캠페인은 재내원 예약 중심이라 신규 환자가 적습니다.')}
+  <div class="grid2">
+    ${panel('월별 채널 비용', '<div class="chart" id="c-m12"></div>', '최근 12개월 (누적 막대)')}
+    ${panel('월별 신규 환자·예약', '<div class="chart" id="c-n12"></div>', '최근 12개월')}
+  </div>
+  ${panel('월별 마케팅 성과 비교', '<div id="t-m12"></div>')}
+  ${panel(`비유료 유입 경로 입력 · ${monFull(M.k)}`, `<form class="form" id="f-org">${ORG.map(([k, n]) => `<label>${n} (명)<input type="number" min="0" name="${k}" value="${raw.org[k]}"></label>`).join('')}</form><div class="form-actions"><button class="btn" id="b-org">저장</button></div>`)}
+  `;
+  $('#mkt-m').onchange = e => { UI.mktMonth = +e.target.value; render(true); };
+  drawChart($('#c-mcost'), { type: 'hbar', labels: CH.map(c => c[1]), series: [{ name: '비용', color: SC(0), values: chRows.map(r => r.cost) }] });
+  drawChart($('#c-mconv'), { type: 'bar', labels: CH.map(c => c[1].replace('네이버 ', '')), tipLabels: chRows.map(r => `${r.n} · 전환율 ${pct(r.conv)}`), series: [{ name: '문의', color: SC(0), values: chRows.map(r => r.inq) }, { name: '예약', color: SC(2), values: chRows.map(r => r.book) }], fmt: n => num(n) + '건', axis: n => num(n), left: 40, labelW: 70 });
+  drawChart($('#c-src'), { type: 'hbar', labels: [...CH.map(c => c[1]), ...ORG.map(o => o[1])], series: [{ name: '신규 환자', color: SC(0), values: [...chRows.map(r => r.newp), ...ORG.map(([k]) => raw.org[k])] }], fmt: n => num(n) + '명' });
+  drawChart($('#c-cac'), { type: 'hbar', labels: CH.map(c => c[1]), series: [{ name: 'CAC', color: SC(0), values: chRows.map(r => r.cac) }], fmt: won });
+  drawChart($('#c-roi'), { type: 'hbar', labels: CH.map(c => c[1]), colors: chRows.map(r => r.roi < 1 ? 'var(--crit)' : null), series: [{ name: 'ROI', color: SC(0), values: chRows.map(r => r.roi) }], fmt: x => pct(x, 0) });
+  const inp = (f, step) => r => `<input type="number" min="0" step="${step}" data-ch="${r.k}" data-f="${f}" value="${r[f]}" aria-label="${esc(r.n)} ${f}">`;
+  table($('#t-ch'), {
+    id: 'ch', rows: chRows, csv: `채널성과_${M.k}`, search: false, totals: true,
+    columns: [
+      { key: 'n', label: '채널' },
+      { key: 'cost', label: '비용 (원)', num: true, html: inp('cost', 100000), total: true },
+      { key: 'inq', label: '문의', num: true, html: inp('inq', 1), total: true },
+      { key: 'book', label: '예약', num: true, html: inp('book', 1), total: true },
+      { key: 'conv', label: '예약 전환율', num: true, fmt: x => pct(x), total: () => pct(M.conv) },
+      { key: 'newp', label: '신규 환자', num: true, html: inp('newp', 1), total: true },
+      { key: 'rev', label: '귀속 매출 (원)', num: true, html: inp('rev', 100000), total: true },
+      { key: 'cac', label: 'CAC', num: true, fmt: won, total: () => won(M.cac) },
+      { key: 'roi', label: 'ROI', num: true, html: r => r.roi < 1 ? `${badge(pct(r.roi, 0), 'crit')}` : pct(r.roi, 0), csv: r => pct(r.roi, 0), total: () => pct(M.roi, 0) },
+    ],
+    onChange: t => { if (!t.dataset.ch) return; S.mkt[i].ch[t.dataset.ch][t.dataset.f] = toPos(t.value); commit('채널 성과를 저장했습니다'); },
+  });
+  drawChart($('#c-m12'), { type: 'stacked', labels: v12.map(r => mon(r.k)), tipLabels: v12.map(r => monFull(r.k)), series: CH.map(([k, n], j) => ({ name: n, color: SC(j), values: v12.map(r => r.ch[k].cost) })) });
+  drawChart($('#c-n12'), { type: 'line', labels: v12.map(r => mon(r.k)), tipLabels: v12.map(r => monFull(r.k)), series: [{ name: '예약', color: SC(0), values: v12.map(r => r.book) }, { name: '신규 환자', color: SC(2), values: v12.map(r => r.allNew) }], fmt: n => num(n) + '건', axis: n => num(n), left: 40 });
+  table($('#t-m12'), {
+    id: 'm12', rows: v12.map((r, j) => ({ ...r, i: j + 12 })), rowId: r => r.i, onRow: id => { UI.mktMonth = +id; render(); scrollTo(0, 0); },
+    csv: '월별마케팅성과', search: false, sort: 'k', sortDir: -1, totals: true, totalLabel: '12개월 합계',
+    columns: [
+      { key: 'k', label: '월', fmt: k => monFull(k) },
+      { key: 'cost', label: '마케팅 비용', num: true, fmt: num, total: true },
+      { key: 'inq', label: '문의', num: true, fmt: num, total: true },
+      { key: 'book', label: '예약', num: true, fmt: num, total: true },
+      { key: 'conv', label: '전환율', num: true, fmt: x => pct(x) },
+      { key: 'newp', label: '신규 (유료)', num: true, fmt: num, total: true },
+      { key: 'allNew', label: '신규 (전체)', num: true, fmt: num, total: true },
+      { key: 'cac', label: 'CAC', num: true, fmt: won },
+      { key: 'rev', label: '귀속 매출', num: true, fmt: num, total: true },
+      { key: 'roi', label: 'ROI', num: true, fmt: x => pct(x, 0) },
+    ],
+  });
+  $('#b-org').onclick = () => { const f = $('#f-org'); ORG.forEach(([k]) => S.mkt[i].org[k] = toPos(fval(f, k))); commit('유입 경로를 저장했습니다'); };
+}
+
+/* ========== 데이터 관리 ========== */
+function pageData(v) {
+  let bytes = 0;
+  try { bytes = (localStorage.getItem(KEY) || '').length * 2; } catch (e) { }
+  v.innerHTML = `
+  <div class="notice info"><span class="ic good" aria-hidden="true">i</span><div>이 시제품의 데이터는 서버가 아닌 <b>이 브라우저(localStorage)</b>에만 저장됩니다. 다른 PC·브라우저와 공유되지 않으며, 브라우저 데이터를 지우면 사라집니다. 정기적으로 JSON 백업을 내려받으세요.</div></div>
+  <div class="kpis">
+    ${kpi('저장 상태', saveOK ? '저장됨' : '저장 불가', saveOK ? `사용량 약 ${num(bytes / 1024)}KB` : '시크릿 모드 등에서는 저장되지 않을 수 있습니다')}
+    ${kpi('기준일', `${D.base.getMonth() + 1}월 ${D.day}일`, `데이터 생성 기준 · ${fmtDate(D.base)}`)}
+    ${kpi('직원 데이터', num(S.emps.length) + '명', '가상 이름 · 실제 개인정보 없음')}
+    ${kpi('재무 데이터', '24개월', `${monFull(S.months[0])} ~ ${monFull(S.months[23])}`)}
+  </div>
+  <div class="grid2">
+    ${panel('백업·복원', `<div class="form-actions" style="justify-content:flex-start;margin:0">
+        <button class="btn" id="b-exp">JSON 백업 다운로드</button>
+        <label class="btn ghost" style="display:inline-flex;align-items:center">JSON 불러오기<input type="file" id="b-imp" accept="application/json,.json" hidden></label>
+        <button class="btn danger" id="b-reset">예시 데이터로 초기화</button>
+      </div><p class="sub-row" style="margin-top:10px">초기화하면 오늘 날짜 기준으로 가상 데이터를 새로 만듭니다. 버튼을 두 번 눌러야 실행됩니다.</p>`)}
+    ${panel('CSV 다운로드', `<div class="form-actions" style="justify-content:flex-start;margin:0">
+        <button class="btn ghost" data-csv="emp">직원 목록</button><button class="btn ghost" data-csv="att">${mon(D.curK)} 근태 기록</button>
+        <button class="btn ghost" data-csv="pay">급여 명세</button><button class="btn ghost" data-csv="pl">손익계산서</button>
+        <button class="btn ghost" data-csv="mkt">마케팅 채널 성과</button><button class="btn ghost" data-csv="daily">일별 매출</button>
+      </div><p class="sub-row" style="margin-top:10px">엑셀에서 한글이 깨지지 않도록 UTF-8 BOM을 포함합니다. 각 화면의 표에서도 검색·필터 결과만 따로 내려받을 수 있습니다.</p>`)}
+  </div>
+  ${panel('계산 기준', `<ol class="formula">
+    <li>매출 = 진료 유형별 매출의 합 (외래 진찰 + 영상검사 + 물리치료 + 도수치료 + 체외충격파 + 주사·시술)</li>
+    <li>환자 1인당 평균 매출 = <code>매출 ÷ 내원 환자 수</code></li>
+    <li>목표 달성률 = <code>누적 매출 ÷ 목표 매출</code> · 월말 예상 = <code>누적 매출 ÷ 경과 일수 × 해당 월 일수</code></li>
+    <li>인건비 = <code>직원 지급총액 + 사업주 부담 4대보험 등</code> (마감월 기준, 과거 월은 당시 인원·임금 수준 계수 적용)</li>
+    <li>매출 대비 인건비율 = <code>인건비 ÷ 매출</code></li>
+    <li>총비용 = <code>인건비 + 임대료 + 재료·약품비 + 광고비 + 장비 리스·감가 + 관리비·공과금 + 기타 운영비</code></li>
+    <li>영업이익 = <code>매출 − 총비용</code> · 영업이익률 = <code>영업이익 ÷ 매출</code></li>
+    <li>전월 대비 성장률 = <code>이번 달 매출 ÷ 전월 매출 − 1</code> · 전년 동월 대비 = <code>이번 달 매출 ÷ 전년 같은 달 매출 − 1</code></li>
+    <li>CAC = <code>채널 비용 ÷ 신규 환자 수</code> · ROI = <code>(귀속 매출 − 비용) ÷ 비용</code> · 예약 전환율 = <code>예약 ÷ 문의</code></li>
+    <li>손익분기 매출 = <code>고정비 ÷ (1 − 재료·약품비율)</code></li>
+  </ol>`)}`;
+  $('#b-exp').onclick = () => download(`hospital_backup_${S.baseDate}.json`, JSON.stringify(S, null, 1), 'application/json');
+  $('#b-imp').onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      try {
+        const o = JSON.parse(fr.result);
+        if (!(o && o.v === 1 && Array.isArray(o.emps) && o.months?.length === 24)) throw new Error();
+        S = o; commit('백업 데이터를 불러왔습니다');
+      } catch (err) { toast('올바른 백업 파일이 아닙니다'); }
+    };
+    fr.readAsText(file);
+  };
+  $('#b-reset').onclick = e => {
+    const b = e.currentTarget;
+    if (!b.dataset.armed) { b.dataset.armed = 1; b.textContent = '한 번 더 누르면 초기화'; return; }
+    S = generate(ymd(new Date())); Object.keys(TS).forEach(k => delete TS[k]); UI.sim = null; UI.attDay = null;
+    commit('예시 데이터로 초기화했습니다');
+  };
+  $$('[data-csv]').forEach(b => b.onclick = () => {
+    const t = b.dataset.csv, c = (key, label, get) => ({ key, label, get });
+    if (t === 'emp') csvDownload('직원목록', [c('id', '사번'), c('name', '이름'), c('dept', '부서'), c('rank', '직급'), c('hire', '입사일')], S.emps);
+    if (t === 'att') {
+      const rows = [];
+      S.emps.forEach(e => (S.att[e.id] || []).forEach(r => rows.push({ e, r })));
+      csvDownload(`근태기록_${D.curK}`, [c('id', '사번', x => x.e.id), c('name', '이름', x => x.e.name), c('dept', '부서', x => x.e.dept), c('d', '날짜', x => `${D.curK}-${pad(x.r.d)}`), c('s', '상태', x => x.r.s), c('i', '출근', x => x.r.i == null ? '' : hm(x.r.i)), c('o', '퇴근', x => x.r.o == null ? '' : hm(x.r.o)), c('h', '근무시간(h)', x => (workMin(x.r) / 60).toFixed(1))], rows);
+    }
+    if (t === 'pay') csvDownload(`급여명세_${D.last.k}`, [c('id', '사번', p => p.e.id), c('name', '이름', p => p.e.name), c('dept', '부서', p => p.e.dept), ...['hourly', 'hourly15', 'base', 'pos', 'otPay', 'nightPay', 'holPay', 'meal', 'other', 'gross', 'pension', 'health', 'ltc', 'empIns', 'tax', 'local', 'ded', 'net', 'cost'].map(k => c(k, { hourly: '시급', hourly15: '1.5배시급', base: '기본급', pos: '직책수당', otPay: '연장수당', nightPay: '야간수당', holPay: '휴일수당', meal: '식대', other: '기타수당', gross: '세전금액', pension: '국민연금', health: '건강보험', ltc: '장기요양', empIns: '고용보험', tax: '소득세', local: '지방소득세', ded: '공제계', net: '세후금액', cost: '사업주부담포함' }[k]))], D.pay);
+    if (t === 'pl') csvDownload('월별손익계산서', [c('k', '월'), c('rev', '매출'), ...COSTS.map(([k, n]) => c(k, n, r => r.costs[k])), c('total', '총비용'), c('op', '영업이익'), c('m', '영업이익률', r => (r.margin * 100).toFixed(1) + '%')], D.v12);
+    if (t === 'mkt') {
+      const rows = [];
+      D.mkt.slice(12).forEach(m => CH.forEach(([k, n]) => rows.push({ k: m.k, n, ...m.ch[k] })));
+      csvDownload('마케팅채널성과', [c('k', '월'), c('n', '채널'), c('cost', '비용'), c('inq', '문의'), c('book', '예약'), c('newp', '신규환자'), c('rev', '귀속매출'), c('cac', 'CAC', r => Math.round(r.cac)), c('roi', 'ROI', r => (r.roi * 100).toFixed(0) + '%')], rows);
+    }
+    if (t === 'daily') csvDownload('일별매출', [c('date', '날짜'), c('rev', '매출'), c('pt', '내원환자'), c('np', '신규환자')], S.daily);
+  });
+}
+
+/* ========== 라우팅 ========== */
+const PAGES = { dashboard: ['경영 대시보드', pageDashboard], hr: ['인사·근태 관리', pageHR], payroll: ['급여 관리', pagePayroll], finance: ['매출·재무 관리', pageFinance], marketing: ['마케팅 관리', pageMarketing], data: ['데이터 관리', pageData] };
+function render(keepScroll) {
+  const p = PAGES[location.hash.slice(1)] ? location.hash.slice(1) : 'dashboard';
+  const y = window.scrollY;
+  CHARTS.clear();
+  $('#title').textContent = PAGES[p][0];
+  document.title = `${PAGES[p][0]} · 정형외과`;
+  $$('#nav a').forEach(a => a.classList.toggle('on', a.dataset.p === p));
+  $('#chip-date').textContent = `기준일 ${fmtDate(D.base)}`;
+  PAGES[p][1]($('#view'));
+  window.scrollTo(0, keepScroll ? y : 0);
+}
+window.addEventListener('hashchange', () => { document.body.classList.remove('nav-open'); render(false); });
+$('#menu').onclick = () => document.body.classList.toggle('nav-open');
+$('#scrim').onclick = () => document.body.classList.remove('nav-open');
+
+S = load() || generate(ymd(new Date()));
+save(); derive(); render(false);
+</script>
+</body>
+</html>
