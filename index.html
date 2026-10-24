@@ -221,9 +221,10 @@ input[type=range]{padding:0;border:0;accent-color:var(--brand);width:100%}
     <a href="#payroll" data-p="payroll"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="13" rx="2"/><path d="M2.5 10h19M6.5 15h4"/></svg>급여 관리</a>
     <a href="#finance" data-p="finance"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>매출·재무 관리</a>
     <a href="#marketing" data-p="marketing"><svg viewBox="0 0 24 24"><path d="M3 10v4l11 5V5L3 10z"/><path d="M17 9a3 3 0 0 1 0 6"/></svg>마케팅 관리</a>
+    <a href="#intake" data-p="intake"><svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="18" rx="2"/><path d="M9 3.5h6v3H9zM8.5 11h7M8.5 15h4.5"/></svg>신규 환자 문진</a>
     <a href="#data" data-p="data"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>데이터 관리</a>
   </nav>
-  <div class="side-foot">시제품 v0.1<br>모든 수치는 가상의 예시 데이터이며 실제 환자·직원 개인정보를 포함하지 않습니다.</div>
+  <div class="side-foot">시제품 v0.1<br>신규 환자 문진 화면을 제외한 모든 수치는 가상의 예시 데이터입니다. 실제 환자·직원 개인정보는 표시하지 않습니다.</div>
 </aside>
 <div class="scrim" id="scrim"></div>
 <div class="main">
@@ -1424,8 +1425,72 @@ function pageData(v) {
   });
 }
 
+/* ========== 7. 신규 환자 문진 (QR 문진 앱 연동) ========== */
+// 문진 앱의 집계 API만 호출한다. 이름·연락처 등 개인정보는 이 화면으로 오지 않는다.
+const INTAKE_APP = 'https://patient-intake-form-green.vercel.app';
+const INTAKE = { days: 30, cache: {} };
+async function fetchIntakeStats(days) {
+  const hit = INTAKE.cache[days];
+  if (hit && Date.now() - hit.at < 60000) return hit.data;
+  const res = await fetch(`${INTAKE_APP}/api/intake/stats?days=${days}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  INTAKE.cache[days] = { at: Date.now(), data };
+  return data;
+}
+function loadQR(el, text) {
+  const draw = () => { el.innerHTML = ''; new QRCode(el, { text, width: 148, height: 148, correctLevel: QRCode.CorrectLevel.M }); };
+  if (window.QRCode) return draw();
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  s.onload = draw;
+  s.onerror = () => { el.innerHTML = '<p class="sub-row">QR 코드를 불러오지 못했습니다.</p>'; };
+  document.head.appendChild(s);
+}
+function pageIntake(v) {
+  const days = INTAKE.days;
+  v.innerHTML = `
+  <div class="notice info"><span class="ic good" aria-hidden="true">i</span><div>이 화면은 <b>실제 QR 문진 제출 데이터</b>의 집계 통계입니다. 개인정보(이름·연락처·병력)는 표시하지 않으며 1분마다 갱신됩니다.</div></div>
+  <div class="panel-act" style="margin-bottom:14px"><label class="sub-row" for="in-days">조회 기간</label><select id="in-days">${opts([[7, '최근 7일'], [30, '최근 30일'], [90, '최근 90일']], days)}</select></div>
+  <div id="in-body"><p class="sub-row">문진 통계를 불러오는 중…</p></div>
+  <div class="grid2">
+    ${panel('문진 QR 코드', `<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap"><div id="in-qr" style="background:#fff;padding:8px;border-radius:8px;line-height:0"></div><div><p class="sub-row" style="margin:0 0 10px">접수대·대기실에 비치해 신규 환자가 스캔하도록 안내하세요.</p><a class="btn" href="${INTAKE_APP}" target="_blank" rel="noopener">문진 앱 열기</a></div></div>`, INTAKE_APP.replace('https://', ''))}
+  </div>`;
+  loadQR($('#in-qr'), INTAKE_APP);
+  $('#in-days').onchange = e => { INTAKE.days = +e.target.value; render(true); };
+  fetchIntakeStats(days).then(s => {
+    const body = $('#in-body');
+    if (!body || INTAKE.days !== days) return; // 다른 화면으로 이동했거나 기간이 바뀜
+    const cnt = n => num(n) + '건', bars = (id, list) => list.length
+      ? drawChart($('#' + id), { type: 'hbar', labels: list.map(r => r.label), series: [{ name: '건수', color: SC(0), values: list.map(r => r.count) }], fmt: cnt })
+      : ($('#' + id).innerHTML = '<p class="sub-row">기간 내 제출 없음</p>');
+    body.innerHTML = `
+    <div class="kpis">
+      ${kpi('오늘 문진 제출', cnt(s.todayCount), `${fmtDate(parseD(s.today))} 기준`)}
+      ${kpi(`최근 ${s.days}일 제출`, cnt(s.total), `일평균 ${(s.total / s.days).toFixed(1)}건`)}
+      ${kpi('평균 통증 점수', s.avgPainScore == null ? '—' : `${s.avgPainScore} / 10`, '환자 자가 평가 (0~10)')}
+      ${kpi('최다 유입 경로', esc(s.channels[0]?.label || '—'), s.channels[0] ? `${cnt(s.channels[0].count)} · ${pct(s.channels[0].count / s.total)}` : '기간 내 제출 없음')}
+    </div>
+    ${panel(`일별 문진 제출 (최근 ${s.days}일)`, '<div class="chart" id="in-daily"></div>', '막대에 마우스를 올리면 건수 표시')}
+    <div class="grid3">
+      ${panel('유입 경로', '<div class="chart" id="in-ch"></div>', '마케팅 관리의 채널별 신규 환자와 비교해 보세요')}
+      ${panel('통증 부위', '<div class="chart" id="in-area"></div>')}
+      ${panel('내원 목적', '<div class="chart" id="in-goal"></div>', '복수 선택 항목')}
+    </div>`;
+    drawChart($('#in-daily'), {
+      type: 'bar', labels: s.daily.map(r => { const d = parseD(r.date); return `${d.getMonth() + 1}/${d.getDate()}`; }),
+      tipLabels: s.daily.map(r => fmtDate(parseD(r.date))), labelW: 40, fmt: cnt, axis: n => num(n),
+      series: [{ name: '문진 제출', color: SC(0), values: s.daily.map(r => r.count) }],
+    });
+    bars('in-ch', s.channels); bars('in-area', s.painAreas); bars('in-goal', s.visitGoals);
+  }).catch(() => {
+    const body = $('#in-body');
+    if (body) body.innerHTML = `<div class="notice"><span class="ic warn" aria-hidden="true">!</span><div>문진 앱(${esc(INTAKE_APP)})에서 통계를 불러오지 못했습니다. 문진 앱 배포 상태와 Supabase 설정을 확인하세요.</div></div>`;
+  });
+}
+
 /* ========== 라우팅 ========== */
-const PAGES = { dashboard: ['경영 대시보드', pageDashboard], hr: ['인사·근태 관리', pageHR], payroll: ['급여 관리', pagePayroll], finance: ['매출·재무 관리', pageFinance], marketing: ['마케팅 관리', pageMarketing], data: ['데이터 관리', pageData] };
+const PAGES = { dashboard: ['경영 대시보드', pageDashboard], hr: ['인사·근태 관리', pageHR], payroll: ['급여 관리', pagePayroll], finance: ['매출·재무 관리', pageFinance], marketing: ['마케팅 관리', pageMarketing], intake: ['신규 환자 문진', pageIntake], data: ['데이터 관리', pageData] };
 function render(keepScroll) {
   const p = PAGES[location.hash.slice(1)] ? location.hash.slice(1) : 'dashboard';
   const y = window.scrollY;
